@@ -1,13 +1,12 @@
-package com.togezzer.restapi.room;
+package com.togezzer.restapi.user;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -16,8 +15,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.time.Instant;
-
 @Setter
 @Getter
 @Builder
@@ -25,8 +22,9 @@ import java.time.Instant;
 @NoArgsConstructor
 @EqualsAndHashCode
 @Entity
-@Table(name = "rooms")
-public class RoomEntity {
+@Table(name = "users")
+public class UserEntity {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -35,14 +33,16 @@ public class RoomEntity {
     @Size(min = 36, max = 36)
     private String uuid;
 
-    @Column(name = "name", nullable = false, length = 255)
-    @Size(min = 1, max = 255)
-    private String name;
+    @Column(unique = true, nullable = false, length = 255)
+    @Email(message = "Email invalide")
+    @Size(min = 5, max = 255)
+    private String email;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "channel_type", nullable = false)
-    private ChannelType channelType;
+    @Column(nullable = false, length = 255)
+    @Size(min = 6, max = 255)
+    private String password;
 
-    @Column(name = "created_at", nullable = false, updatable = false)
-    private Instant createdAt;
+    @Column(unique = true, nullable = false, length = 100)
+    @Size(min = 3, max = 100)
+    private String username;
 }

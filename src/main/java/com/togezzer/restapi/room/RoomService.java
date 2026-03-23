@@ -1,6 +1,14 @@
 package com.togezzer.restapi.room;
 
+import com.togezzer.restapi.exception.AlreadyInRoomException;
+import com.togezzer.restapi.exception.RoomNotFoundException;
+import com.togezzer.restapi.exception.UserNotFoundException;
+import com.togezzer.restapi.room.dto.JoinRoomDTO;
 import com.togezzer.restapi.room.dto.RoomDTO;
+import com.togezzer.restapi.room_users.RoomUserEntity;
+import com.togezzer.restapi.room_users.RoomUserId;
+import com.togezzer.restapi.room_users.RoomUserRepository;
+import com.togezzer.restapi.user.UserRepository;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -9,9 +17,13 @@ import java.util.UUID;
 @Service
 public class RoomService {
     private final RoomRepository roomRepository;
+    private final UserRepository userRepository;
+    private final RoomUserRepository roomUserRepository;
 
-    public RoomService(RoomRepository roomRepository) {
+    public RoomService(RoomRepository roomRepository, UserRepository userRepository, RoomUserRepository roomUserRepository) {
         this.roomRepository = roomRepository;
+        this.userRepository = userRepository;
+        this.roomUserRepository = roomUserRepository;
     }
 
     public RoomDTO create(final RoomDTO roomDTO) {
@@ -40,5 +52,26 @@ public class RoomService {
                 .channelType(roomEntity.getChannelType())
                 .createdAt(roomEntity.getCreatedAt())
                 .build();
+    }
+
+    public void join(final JoinRoomDTO joinRoomDTO) {
+        final var roomEntity = this.roomRepository.findByUuid(joinRoomDTO.roomId())
+                .orElseThrow(() -> new RoomNotFoundException("La room avec l'id " + joinRoomDTO.roomId() + " n'existe pas"));
+
+        final var userEntity = this.userRepository.findByUuid(joinRoomDTO.userId())
+                .orElseThrow(() -> new UserNotFoundException("L'utilisateur avec l'id " + joinRoomDTO.userId() + " n'existe pas"));
+
+        if (this.roomUserRepository.existsByRoom_IdAndUser_Id(roomEntity.getId(), userEntity.getId())) {
+            throw new AlreadyInRoomException("L'utilisateur avec l'id " + joinRoomDTO.userId() + " est déjà dans la room avec l'id " + joinRoomDTO.roomId());
+        }
+
+        final var roomUserId = new RoomUserId(roomEntity.getId(), userEntity.getId());
+        final var roomUserEntity = RoomUserEntity.builder()
+                .id(roomUserId)
+                .room(roomEntity)
+                .user(userEntity)
+                .build();
+
+        this.roomUserRepository.save(roomUserEntity);
     }
 }

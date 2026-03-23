@@ -1,5 +1,6 @@
 package com.togezzer.restapi.room;
 
+import com.togezzer.restapi.room.dto.JoinRoomDTO;
 import com.togezzer.restapi.room.dto.RoomDTO;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -23,5 +24,11 @@ public class RoomController {
     @ResponseStatus(HttpStatus.CREATED)
     public RoomDTO createRoom(@Valid @RequestBody RoomDTO roomDTO) {
         return this.roomService.create(roomDTO);
+    }
+
+    @PostMapping("/join")
+    @ResponseStatus(HttpStatus.OK)
+    public void joinRoom(@Valid @RequestBody JoinRoomDTO joinRoomDTO) {
+        this.roomService.join(joinRoomDTO);
     }
 }
