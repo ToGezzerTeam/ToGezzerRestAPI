@@ -24,4 +24,5 @@ public class RoomController {
     public RoomDTO createRoom(@Valid @RequestBody RoomDTO roomDTO) {
         return this.roomService.create(roomDTO);
     }
+    public RoomDTO renameRoom(@Valid @RequestBody RoomEntity roomEntity, String newName) { return this.roomService.rename(roomEntity, newName); }
 }

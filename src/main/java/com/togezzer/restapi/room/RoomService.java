@@ -41,4 +41,17 @@ public class RoomService {
                 .createdAt(roomEntity.getCreatedAt())
                 .build();
     }
+
+    public RoomDTO rename(RoomEntity roomEntity, String newName) {
+        final var renamedRoomEntity = RoomEntity.builder()
+                .id(roomEntity.getId())
+                .uuid(roomEntity.getUuid())
+                .name(newName)
+                .channelType(roomEntity.getChannelType())
+                .createdAt(roomEntity.getCreatedAt())
+                .build();
+
+        final var updatedRoomEntity = this.roomRepository.save(renamedRoomEntity);
+        return this.entityToDto(updatedRoomEntity);
+    }
 }
