@@ -1,12 +1,20 @@
 package com.togezzer.restapi.room.dto;
 
 import jakarta.validation.constraints.NotBlank;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.Setter;
 
-public record JoinRoomDTO (
-        @NotBlank(message = "L'id de la room est requis")
-        String roomId,
+import java.util.UUID;
 
-        @NotBlank(message = "L'id de l'utilisateur est requis")
-        String userId
-){}
+@Setter
+@Getter
+@AllArgsConstructor
+public class JoinRoomDTO {
+
+        private UUID roomUuid;
+
+        @NotBlank(message = "L'uuid de l'utilisateur est requis")
+        private UUID userUuid;
+}
 

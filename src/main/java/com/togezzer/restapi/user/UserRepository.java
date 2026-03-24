@@ -5,9 +5,10 @@ import org.springframework.data.repository.ListCrudRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
+import java.util.UUID;
 
 @Primary
 @Repository
 public interface UserRepository extends ListCrudRepository<UserEntity, Long> {
-    Optional<UserEntity> findByUuid(String s);
+    Optional<UserEntity> findByUuid(UUID s);
 }

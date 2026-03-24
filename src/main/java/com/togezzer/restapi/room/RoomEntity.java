@@ -17,6 +17,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.Instant;
+import java.util.UUID;
 
 @Setter
 @Getter
@@ -33,7 +34,7 @@ public class RoomEntity {
 
     @Column(unique = true, nullable = false, updatable = false, length = 36)
     @Size(min = 36, max = 36)
-    private String uuid;
+    private UUID uuid;
 
     @Column(name = "name", nullable = false, length = 255)
     @Size(min = 1, max = 255)

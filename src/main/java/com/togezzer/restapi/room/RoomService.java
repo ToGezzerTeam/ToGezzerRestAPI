@@ -27,7 +27,7 @@ public class RoomService {
     }
 
     public RoomDTO create(final RoomDTO roomDTO) {
-        final var uuid =UUID.randomUUID().toString();
+        final var uuid = UUID.randomUUID();
 
         final var roomEntityBuilder = RoomEntity.builder()
                 .id(null)
@@ -37,7 +37,7 @@ public class RoomService {
                 .createdAt(Instant.now());
 
         if (roomDTO.getName() == null || roomDTO.getName().isBlank()) {
-            roomEntityBuilder.name(uuid);
+            roomEntityBuilder.name(uuid.toString());
         }
 
         final var createdRoomEntity = this.roomRepository.save(roomEntityBuilder.build());
@@ -47,7 +47,7 @@ public class RoomService {
     private RoomDTO entityToDto(final RoomEntity roomEntity) {
         return RoomDTO.builder()
                 .id(roomEntity.getId())
-                .uuid(UUID.fromString(roomEntity.getUuid()))
+                .uuid(roomEntity.getUuid())
                 .name(roomEntity.getName())
                 .channelType(roomEntity.getChannelType())
                 .createdAt(roomEntity.getCreatedAt())
@@ -55,14 +55,14 @@ public class RoomService {
     }
 
     public void join(final JoinRoomDTO joinRoomDTO) {
-        final var roomEntity = this.roomRepository.findByUuid(joinRoomDTO.roomId())
-                .orElseThrow(() -> new RoomNotFoundException("La room avec l'id " + joinRoomDTO.roomId() + " n'existe pas"));
+        final var roomEntity = this.roomRepository.findByUuid(joinRoomDTO.getRoomUuid())
+                .orElseThrow(() -> new RoomNotFoundException("La room avec l'id " + joinRoomDTO.getRoomUuid() + " n'existe pas"));
 
-        final var userEntity = this.userRepository.findByUuid(joinRoomDTO.userId())
-                .orElseThrow(() -> new UserNotFoundException("L'utilisateur avec l'id " + joinRoomDTO.userId() + " n'existe pas"));
+        final var userEntity = this.userRepository.findByUuid(joinRoomDTO.getUserUuid())
+                .orElseThrow(() -> new UserNotFoundException("L'utilisateur avec l'id " + joinRoomDTO.getUserUuid() + " n'existe pas"));
 
         if (this.roomUserRepository.existsByRoom_IdAndUser_Id(roomEntity.getId(), userEntity.getId())) {
-            throw new AlreadyInRoomException("L'utilisateur avec l'id " + joinRoomDTO.userId() + " est déjà dans la room avec l'id " + joinRoomDTO.roomId());
+            throw new AlreadyInRoomException("L'utilisateur avec l'id " + joinRoomDTO.getUserUuid() + " est déjà dans la room avec l'id " + joinRoomDTO.getRoomUuid());
         }
 
         final var roomUserId = new RoomUserId(roomEntity.getId(), userEntity.getId());

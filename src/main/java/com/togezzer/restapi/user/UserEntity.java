@@ -15,6 +15,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.UUID;
+
 @Setter
 @Getter
 @Builder
@@ -31,7 +33,7 @@ public class UserEntity {
 
     @Column(unique = true, nullable = false, updatable = false, length = 36)
     @Size(min = 36, max = 36)
-    private String uuid;
+    private UUID uuid;
 
     @Column(unique = true, nullable = false, length = 255)
     @Email(message = "Email invalide")

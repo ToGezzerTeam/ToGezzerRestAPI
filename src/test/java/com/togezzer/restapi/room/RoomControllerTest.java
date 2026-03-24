@@ -51,4 +51,5 @@ public class RoomControllerTest {
                         .content(objectMapper.writeValueAsString(invalidRoom)))
                 .andExpect(status().isBadRequest());
     }
+
 }
