@@ -193,7 +193,7 @@ public class RoomServiceTest {
 
         final var saved = argumentCaptor.getValue();
         assertEquals(id, saved.getId());
-        assertEquals(uuid.toString(), saved.getUuid());
+        assertEquals(uuid, saved.getUuid());
         assertEquals("New name", saved.getName());
         assertEquals(ChannelType.TEXT, saved.getChannelType());
         assertEquals(createdAt, saved.getCreatedAt());
