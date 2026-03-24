@@ -66,6 +66,7 @@ public class RoomService {
                 .channelType(roomEntity.getChannelType())
                 .createdAt(roomEntity.getCreatedAt())
                 .build());
+    }
 
     public void join(final JoinRoomDTO joinRoomDTO) {
         final var roomEntity = this.roomRepository.findByUuid(joinRoomDTO.getRoomUuid())

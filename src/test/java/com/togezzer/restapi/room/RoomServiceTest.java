@@ -171,7 +171,7 @@ public class RoomServiceTest {
 
         final var existingEntity = RoomEntity.builder()
                 .id(id)
-                .uuid(uuid.toString())
+                .uuid(UUID.fromString(uuid.toString()))
                 .name("Old name")
                 .channelType(ChannelType.TEXT)
                 .createdAt(createdAt)

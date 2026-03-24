@@ -30,6 +30,7 @@ public class RoomController {
     @ResponseStatus(HttpStatus.OK)
     public void renameRoom(@PathVariable UUID uuid, @RequestBody @Valid RenameRoomDTO request) {
         this.roomService.rename(uuid, request);
+    }
 
     @PostMapping("{roomUuid}/join")
     @ResponseStatus(HttpStatus.OK)
