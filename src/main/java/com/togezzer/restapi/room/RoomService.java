@@ -1,6 +1,8 @@
 package com.togezzer.restapi.room;
 
+import com.togezzer.restapi.room.dto.RenameRoomDTO;
 import com.togezzer.restapi.room.dto.RoomDTO;
+import com.togezzer.restapi.exception.RoomNotFoundException;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -42,16 +44,16 @@ public class RoomService {
                 .build();
     }
 
-    public RoomDTO rename(RoomEntity roomEntity, String newName) {
-        final var renamedRoomEntity = RoomEntity.builder()
+    public void rename(UUID roomId, RenameRoomDTO newName) {
+        final var roomEntity = this.roomRepository.findByUuid(roomId)
+                .orElseThrow(() -> new RoomNotFoundException("La room avec l'id " + roomId + " n'existe pas"));
+
+        this.roomRepository.save(RoomEntity.builder()
                 .id(roomEntity.getId())
                 .uuid(roomEntity.getUuid())
-                .name(newName)
+                .name(newName.newName())
                 .channelType(roomEntity.getChannelType())
                 .createdAt(roomEntity.getCreatedAt())
-                .build();
-
-        final var updatedRoomEntity = this.roomRepository.save(renamedRoomEntity);
-        return this.entityToDto(updatedRoomEntity);
+                .build());
     }
 }

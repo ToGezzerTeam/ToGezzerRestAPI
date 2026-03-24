@@ -1,5 +1,7 @@
 package com.togezzer.restapi.room;
 
+import com.togezzer.restapi.exception.RoomNotFoundException;
+import com.togezzer.restapi.room.dto.RenameRoomDTO;
 import com.togezzer.restapi.room.dto.RoomDTO;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -13,6 +15,7 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.verify;
 
@@ -124,6 +127,56 @@ public class RoomServiceTest {
         RoomEntity savedEntity = argumentCaptor.getValue();
 
         assertEquals(savedEntity.getUuid(), savedEntity.getName());
+    }
+
+    @Test
+    void should_rename_room_successfully() {
+        // Arrange
+        final var uuid = UUID.randomUUID();
+        final var id = 10L;
+        final var createdAt = Instant.parse("2025-01-01T10:00:00Z");
+
+        final var existingEntity = RoomEntity.builder()
+                .id(id)
+                .uuid(uuid.toString())
+                .name("Old name")
+                .channelType(ChannelType.TEXT)
+                .createdAt(createdAt)
+                .build();
+
+        doReturn(java.util.Optional.of(existingEntity))
+                .when(this.roomRepository)
+                .findByUuid(uuid);
+        doReturn(existingEntity).when(this.roomRepository).save(any(RoomEntity.class));
+
+        final var request = new RenameRoomDTO("New name");
+
+        // Act
+        roomService.rename(uuid, request);
+
+        // Assert
+        final var argumentCaptor = ArgumentCaptor.forClass(RoomEntity.class);
+        verify(this.roomRepository).save(argumentCaptor.capture());
+
+        final var saved = argumentCaptor.getValue();
+        assertEquals(id, saved.getId());
+        assertEquals(uuid.toString(), saved.getUuid());
+        assertEquals("New name", saved.getName());
+        assertEquals(ChannelType.TEXT, saved.getChannelType());
+        assertEquals(createdAt, saved.getCreatedAt());
+    }
+
+    @Test
+    void should_throw_when_renaming_unknown_room() {
+        // Arrange
+        final var uuid = UUID.randomUUID();
+        doReturn(java.util.Optional.empty())
+                .when(this.roomRepository)
+                .findByUuid(uuid);
+
+        // Act + Assert
+        assertThrows(RoomNotFoundException.class, () -> roomService.rename(uuid, new RenameRoomDTO("New name")));
+        verify(this.roomRepository, never()).save(any(RoomEntity.class));
     }
 
     private RoomEntity createRoomEntity(final UUID uuid, final String name) {
