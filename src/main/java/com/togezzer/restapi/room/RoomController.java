@@ -27,7 +27,7 @@ public class RoomController {
 
     @PostMapping("{roomUuid}/join")
     @ResponseStatus(HttpStatus.OK)
-    public void joinRoom(@PathVariable @NotNull(message = "L'uuid de la room est requis") UUID roomUuid, @Valid @RequestBody JoinRoomDTO joinRoomDTO) {
+    public void joinRoom(@PathVariable @NotNull(message = "Room's UUID is required") UUID roomUuid, @Valid @RequestBody JoinRoomDTO joinRoomDTO) {
         joinRoomDTO.setRoomUuid(roomUuid);
         this.roomService.join(joinRoomDTO);
     }

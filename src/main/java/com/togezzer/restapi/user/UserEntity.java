@@ -31,12 +31,11 @@ public class UserEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(unique = true, nullable = false, updatable = false, length = 36)
-    @Size(min = 36, max = 36)
+    @Column(unique = true, nullable = false, updatable = false)
     private UUID uuid;
 
     @Column(unique = true, nullable = false, length = 255)
-    @Email(message = "Email invalide")
+    @Email(message = "Invalid Email")
     @Size(min = 5, max = 255)
     private String email;
 

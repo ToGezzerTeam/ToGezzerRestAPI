@@ -56,13 +56,13 @@ public class RoomService {
 
     public void join(final JoinRoomDTO joinRoomDTO) {
         final var roomEntity = this.roomRepository.findByUuid(joinRoomDTO.getRoomUuid())
-                .orElseThrow(() -> new RoomNotFoundException("La room avec l'id " + joinRoomDTO.getRoomUuid() + " n'existe pas"));
+                .orElseThrow(() -> new RoomNotFoundException("Room with ID " + joinRoomDTO.getRoomUuid() + " does not exist"));
 
         final var userEntity = this.userRepository.findByUuid(joinRoomDTO.getUserUuid())
-                .orElseThrow(() -> new UserNotFoundException("L'utilisateur avec l'id " + joinRoomDTO.getUserUuid() + " n'existe pas"));
+                .orElseThrow(() -> new UserNotFoundException("User with ID " + joinRoomDTO.getUserUuid() + " does not exist"));
 
         if (this.roomUserRepository.existsByRoom_IdAndUser_Id(roomEntity.getId(), userEntity.getId())) {
-            throw new AlreadyInRoomException("L'utilisateur avec l'id " + joinRoomDTO.getUserUuid() + " est déjà dans la room avec l'id " + joinRoomDTO.getRoomUuid());
+            throw new AlreadyInRoomException("User with ID " + joinRoomDTO.getUserUuid() + " is already in the room with ID " + joinRoomDTO.getRoomUuid());
         }
 
         final var roomUserId = new RoomUserId(roomEntity.getId(), userEntity.getId());

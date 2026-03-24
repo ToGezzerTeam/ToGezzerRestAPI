@@ -32,7 +32,7 @@ public class RoomEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(unique = true, nullable = false, updatable = false, length = 36)
+    @Column(unique = true, nullable = false, updatable = false)
     private UUID uuid;
 
     @Column(name = "name", nullable = false, length = 255)

@@ -14,7 +14,7 @@ public class JoinRoomDTO {
 
         private UUID roomUuid;
 
-        @NotNull(message = "L'uuid de l'utilisateur est requis")
+        @NotNull(message = "User's UUID is required.")
         private UUID userUuid;
 }
 
