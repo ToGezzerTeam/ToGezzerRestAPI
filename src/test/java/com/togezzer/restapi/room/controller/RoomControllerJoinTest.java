@@ -1,10 +1,10 @@
-package com.togezzer.restapi.room;
+package com.togezzer.restapi.room.controller;
 
 import com.togezzer.restapi.exception.AlreadyInRoomException;
 import com.togezzer.restapi.exception.RoomNotFoundException;
 import com.togezzer.restapi.exception.UserNotFoundException;
+import com.togezzer.restapi.room.RoomService;
 import com.togezzer.restapi.room.dto.JoinRoomDTO;
-import com.togezzer.restapi.room.dto.RoomDTO;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -16,16 +16,15 @@ import tools.jackson.databind.ObjectMapper;
 
 import java.util.UUID;
 
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
 @AutoConfigureMockMvc
-public class RoomControllerTest {
+public class RoomControllerJoinTest {
     @Autowired
     private MockMvc mockMvc;
 
@@ -34,35 +33,6 @@ public class RoomControllerTest {
 
     @MockitoBean
     private RoomService roomService;
-
-    @Test
-    void should_create_room_successfully() throws Exception {
-        RoomDTO roomDTO = RoomDTO.builder()
-                .name("General Chat")
-                .channelType(ChannelType.TEXT)
-                .build();
-
-        mockMvc.perform(post("/api/rooms")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(roomDTO)))
-                .andExpect(status().isCreated())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.name").value("General Chat"))
-                .andExpect(jsonPath("$.channelType").value("TEXT"))
-                .andExpect(jsonPath("$.id").isNotEmpty());
-    }
-
-    @Test
-    void should_fail_when_channelType_is_null() throws Exception {
-        RoomDTO invalidRoom = RoomDTO.builder()
-                .channelType(null)
-                .build();
-
-        mockMvc.perform(post("/api/rooms")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(invalidRoom)))
-                .andExpect(status().isBadRequest());
-    }
 
     @Test
     void joinRoom_returns200_andCallsServiceWithRoomUuidFromPath() throws Exception {
@@ -169,5 +139,4 @@ public class RoomControllerTest {
 
         verifyNoInteractions(this.roomService);
     }
-
 }
