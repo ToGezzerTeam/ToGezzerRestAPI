@@ -65,7 +65,7 @@ public class RoomServiceTest {
 
         // Assert
         assertEquals(1L, created.getId());
-        assertEquals(generatedUuid, created.getUuid().toString());
+        assertEquals(generatedUuid, created.getUuid());
         assertEquals("Test room", created.getName());
         assertEquals(ChannelType.TEXT, created.getChannelType());
         assertEquals(now, created.getCreatedAt());
@@ -114,7 +114,7 @@ public class RoomServiceTest {
         verify(this.roomRepository).save(argumentCaptor.capture());
         RoomEntity savedEntity = argumentCaptor.getValue();
 
-        assertEquals(savedEntity.getUuid(), savedEntity.getName());
+        assertEquals(savedEntity.getUuid().toString(), savedEntity.getName());
     }
 
     @Test
@@ -137,7 +137,7 @@ public class RoomServiceTest {
         verify(this.roomRepository).save(argumentCaptor.capture());
         RoomEntity savedEntity = argumentCaptor.getValue();
 
-        assertEquals(savedEntity.getUuid(), savedEntity.getName());
+        assertEquals(savedEntity.getUuid().toString(), savedEntity.getName());
     }
 
     @Test
