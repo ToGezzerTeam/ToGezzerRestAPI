@@ -1,14 +1,20 @@
-package com.togezzer.restapi.room;
+package com.togezzer.restapi.room.controller;
 
+import com.togezzer.restapi.exception.AlreadyInRoomException;
+import com.togezzer.restapi.exception.RoomNotFoundException;
+import com.togezzer.restapi.exception.UserNotFoundException;
+import com.togezzer.restapi.room.ChannelType;
+import com.togezzer.restapi.room.RoomService;
+import com.togezzer.restapi.room.dto.JoinRoomDTO;
 import com.togezzer.restapi.room.dto.RoomDTO;
 import org.junit.jupiter.api.Test;
+import org.mockito.Spy;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import tools.jackson.databind.ObjectMapper;
-
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -16,7 +22,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest
 @AutoConfigureMockMvc
-public class RoomControllerTest {
+public class RoomControllerCreateTest {
     @Autowired
     private MockMvc mockMvc;
 

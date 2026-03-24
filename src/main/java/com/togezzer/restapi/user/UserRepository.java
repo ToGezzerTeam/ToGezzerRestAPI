@@ -1,4 +1,4 @@
-package com.togezzer.restapi.room;
+package com.togezzer.restapi.user;
 
 import org.springframework.context.annotation.Primary;
 import org.springframework.data.repository.ListCrudRepository;
@@ -9,6 +9,6 @@ import java.util.UUID;
 
 @Primary
 @Repository
-public interface RoomRepository extends ListCrudRepository<RoomEntity, Long> {
-    Optional<RoomEntity> findByUuid(UUID s);
+public interface UserRepository extends ListCrudRepository<UserEntity, Long> {
+    Optional<UserEntity> findByUuid(UUID s);
 }
