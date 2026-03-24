@@ -1,0 +1,71 @@
+on:
+  pull_request:
+  push:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 25
+          cache: gradle
+
+      - name: Grant execute permission for Gradle wrapper
+        run: chmod +x gradlew
+
+      - name: Tests + JaCoCo
+        run: ./gradlew clean test jacocoTestReport
+
+      # SonarCloud : uniquement si le token est présent (fork PR n'aura pas les secrets)
+      - name: SonarCloud analysis
+        if: ${{ env.SONAR_TOKEN != '' }}
+        uses: SonarSource/sonarcloud-github-action@v2
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          args: >
+            -Dsonar.projectKey=${{ secrets.SONAR_PROJECT_KEY }}
+            -Dsonar.organization=${{ secrets.SONAR_ORGANIZATION }}
+            -Dsonar.sources=src/main/java
+            -Dsonar.tests=src/test/java
+            -Dsonar.java.binaries=build/classes/java/main
+            -Dsonar.java.test.binaries=build/classes/java/test
+            -Dsonar.coverage.jacoco.xmlReportPaths=build/reports/jacoco/test/jacocoTestReport.xml
+
+      - name: Install jq (for Quality Gate polling)
+        if: ${{ env.SONAR_TOKEN != '' }}
+        run: sudo apt-get update && sudo apt-get install -y jq
+
+      - name: Check SonarCloud Quality Gate
+        if: ${{ env.SONAR_TOKEN != '' }}
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_PROJECT_KEY: ${{ secrets.SONAR_PROJECT_KEY }}
+        run: |
+          set -e
+          echo "Waiting for SonarCloud analysis to complete..."
+          STATUS=""
+          ATTEMPTS=0
+          MAX_ATTEMPTS=30
+          SLEEP_TIME=10
+          while [[ "$STATUS" != "OK" && "$STATUS" != "FAILED" && $ATTEMPTS -lt $MAX_ATTEMPTS ]]; do
+            RESPONSE=$(curl -s -u $SONAR_TOKEN: "https://sonarcloud.io/api/qualitygates/project_status?projectKey=$SONAR_PROJECT_KEY")
+            STATUS=$(echo "$RESPONSE" | jq -r '.projectStatus.status')
+            echo "Current Quality Gate status: $STATUS"
+            if [[ "$STATUS" == "OK" ]]; then
+              echo "Quality Gate passed!"
+              exit 0
+            elif [[ "$STATUS" == "FAILED" ]]; then
+              echo "Quality Gate failed!"
+              exit 1
+            fi
+            ((ATTEMPTS++))
+            sleep $SLEEP_TIME
+          done
+          echo "Timed out waiting for Quality Gate result."
+          exit 1
