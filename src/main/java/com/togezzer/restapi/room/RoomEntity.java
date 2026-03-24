@@ -33,7 +33,6 @@ public class RoomEntity {
     private Long id;
 
     @Column(unique = true, nullable = false, updatable = false, length = 36)
-    @Size(min = 36, max = 36)
     private UUID uuid;
 
     @Column(name = "name", nullable = false, length = 255)

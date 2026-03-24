@@ -3,7 +3,7 @@ package com.togezzer.restapi.room;
 import com.togezzer.restapi.room.dto.JoinRoomDTO;
 import com.togezzer.restapi.room.dto.RoomDTO;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
@@ -27,7 +27,7 @@ public class RoomController {
 
     @PostMapping("{roomUuid}/join")
     @ResponseStatus(HttpStatus.OK)
-    public void joinRoom(@PathVariable @NotBlank(message = "L'uuid de la room est requis") UUID roomUuid, @Valid @RequestBody JoinRoomDTO joinRoomDTO) {
+    public void joinRoom(@PathVariable @NotNull(message = "L'uuid de la room est requis") UUID roomUuid, @Valid @RequestBody JoinRoomDTO joinRoomDTO) {
         joinRoomDTO.setRoomUuid(roomUuid);
         this.roomService.join(joinRoomDTO);
     }
