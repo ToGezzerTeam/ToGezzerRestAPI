@@ -28,7 +28,7 @@ public class RoomController {
 
     @PatchMapping("/{uuid}")
     @ResponseStatus(HttpStatus.OK)
-    public void renameRoom(@PathVariable UUID uuid, @RequestBody @Valid RenameRoomDTO request) {
+    public void renameRoom(@PathVariable @NotNull(message = "Room's UUID is required") UUID uuid, @RequestBody @Valid RenameRoomDTO request) {
         this.roomService.rename(uuid, request);
     }
 

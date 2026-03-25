@@ -11,5 +11,5 @@ import java.util.UUID;
 @Primary
 @Repository
 public interface RoomRepository extends ListCrudRepository<RoomEntity, Long> {
-    Optional<RoomEntity> findByUuid(@Size(min = 36, max = 36) UUID uuid);
+    Optional<RoomEntity> findByUuid(UUID uuid);
 }

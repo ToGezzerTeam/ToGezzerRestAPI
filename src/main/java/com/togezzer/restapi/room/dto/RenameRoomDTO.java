@@ -4,7 +4,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
 public record RenameRoomDTO(
-		@NotBlank(message = "newName ne doit pas être vide")
-		@Size(max = 100, message = "newName doit faire au maximum 100 caractères")
-		String newName
+		@NotBlank(message = "name should not be empty")
+		@Size(max = 255, message = "name should not exceed 255 characters")
+		String name
 ) {}
