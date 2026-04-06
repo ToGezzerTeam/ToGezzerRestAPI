@@ -4,6 +4,7 @@ import com.togezzer.restapi.exception.MessageNotFoundRemoteException;
 import com.togezzer.restapi.exception.RemoteApiClientException;
 import com.togezzer.restapi.exception.RemoteApiServerException;
 import com.togezzer.restapi.message.dto.MessageDTO;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
@@ -16,8 +17,10 @@ import java.util.UUID;
 public class MessageApiClientService {
     private final RestClient restClient;
 
-    public MessageApiClientService(@Value("${togezzer.chat-sauvegarde.base-url}") String baseUrl) {
-        this.restClient = RestClient.builder()
+    @Autowired
+    public MessageApiClientService(RestClient.Builder builder,
+                                   @Value("${togezzer.chat-sauvegarde.base-url}") String baseUrl) {
+        this.restClient = builder
                 .baseUrl(baseUrl)
                 .build();
     }
@@ -41,14 +44,10 @@ public class MessageApiClientService {
             throw new MessageNotFoundRemoteException(messageUuid, roomUuid);
         }
 
-        throw new RemoteApiClientException(
-                String.format("Client error (%d) while calling %s", status, uri)
-        );
+        throw new RemoteApiClientException(status, uri);
     }
 
     private void handle5xxError(String uri, int status) {
-        throw new RemoteApiServerException(
-                String.format("Server error (%d) while calling %s", status, uri)
-        );
+        throw new RemoteApiServerException(status, uri);
     }
 }

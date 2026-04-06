@@ -143,46 +143,50 @@ public class RoomServiceTest {
     @Test
     void when_room_id_does_not_exist_should_throw_RoomNotFoundException() {
         final var joinRoomDto = new JoinRoomDTO(UUID.randomUUID(), UUID.randomUUID());
+        final var roomUuid = UUID.randomUUID();
 
-        when(this.roomRepository.findByUuid(joinRoomDto.getRoomUuid())).thenReturn(java.util.Optional.empty());
+        when(this.roomRepository.findByUuid(roomUuid)).thenReturn(java.util.Optional.empty());
 
-        assertThrows(RoomNotFoundException.class, () -> this.roomService.join(joinRoomDto,UUID.randomUUID()));
+        assertThrows(RoomNotFoundException.class, () -> this.roomService.join(joinRoomDto, roomUuid));
     }
 
     @Test
     void when_user_id_does_not_exist_should_throw_UserNotFoundException() {
         final var joinRoomDto = new JoinRoomDTO(UUID.randomUUID(), UUID.randomUUID());
+        final var roomUuid = UUID.randomUUID();
 
-        when(this.roomRepository.findByUuid(joinRoomDto.getRoomUuid())).thenReturn(Optional.of(new RoomEntity()));
+        when(this.roomRepository.findByUuid(roomUuid)).thenReturn(Optional.of(new RoomEntity()));
         when(this.userRepository.findByUuid(joinRoomDto.getUserUuid())).thenReturn(java.util.Optional.empty());
 
-        assertThrows(UserNotFoundException.class, () -> this.roomService.join(joinRoomDto,UUID.randomUUID()));
+        assertThrows(UserNotFoundException.class, () -> this.roomService.join(joinRoomDto, roomUuid));
     }
 
     @Test
     void when_user_already_in_room_should_throw_AlreadyInRoomException() {
         final var joinRoomDto = new JoinRoomDTO(UUID.randomUUID(), UUID.randomUUID());
+        final var roomUuid = UUID.randomUUID();
         final RoomEntity roomEntity = new RoomEntity();
         final UserEntity userEntity = new UserEntity();
 
-        when(this.roomRepository.findByUuid(joinRoomDto.getRoomUuid())).thenReturn(Optional.of(roomEntity));
+        when(this.roomRepository.findByUuid(roomUuid)).thenReturn(Optional.of(roomEntity));
         when(this.userRepository.findByUuid(joinRoomDto.getUserUuid())).thenReturn(Optional.of(userEntity));
         when(this.roomUserRepository.existsByRoom_IdAndUser_Id(roomEntity.getId(), userEntity.getId())).thenReturn(true);
 
-        assertThrows(AlreadyInRoomException.class, () -> this.roomService.join(joinRoomDto,UUID.randomUUID()));
+        assertThrows(AlreadyInRoomException.class, () -> this.roomService.join(joinRoomDto, roomUuid));
     }
 
     @Test
     void should_join_room_successfully(){
         final var joinRoomDto = new JoinRoomDTO(UUID.randomUUID(), UUID.randomUUID());
+        final var roomUuid = UUID.randomUUID();
         final RoomEntity roomEntity = new RoomEntity();
         final UserEntity userEntity = new UserEntity();
 
-        when(this.roomRepository.findByUuid(joinRoomDto.getRoomUuid())).thenReturn(Optional.of(roomEntity));
+        when(this.roomRepository.findByUuid(roomUuid)).thenReturn(Optional.of(roomEntity));
         when(this.userRepository.findByUuid(joinRoomDto.getUserUuid())).thenReturn(Optional.of(userEntity));
         when(this.roomUserRepository.existsByRoom_IdAndUser_Id(roomEntity.getId(), userEntity.getId())).thenReturn(false);
 
-        this.roomService.join(joinRoomDto,UUID.randomUUID());
+        this.roomService.join(joinRoomDto, roomUuid);
 
         verify(this.roomUserRepository).save(any(RoomUserEntity.class));
     }

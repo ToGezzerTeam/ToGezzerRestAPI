@@ -1,7 +1,7 @@
 package com.togezzer.restapi.message.dto;
 
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -9,6 +9,6 @@ import lombok.Setter;
 @Setter
 public class UpdateMessageDTO extends MessagePostDTO{
     @Valid
-    @NotBlank(message = "Content is required")
+    @NotNull(message = "Content is required")
     private ContentDTO content;
 }
