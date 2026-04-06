@@ -54,7 +54,8 @@ public class RoomService {
                 .build();
     }
 
-    public void join(final JoinRoomDTO joinRoomDTO) {
+    public void join(final JoinRoomDTO joinRoomDTO, final UUID roomUuid) {
+        joinRoomDTO.setRoomUuid(roomUuid);
         final var roomEntity = this.roomRepository.findByUuid(joinRoomDTO.getRoomUuid())
                 .orElseThrow(() -> new RoomNotFoundException("Room with ID " + joinRoomDTO.getRoomUuid() + " does not exist"));
 
