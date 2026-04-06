@@ -1,5 +1,6 @@
 package com.togezzer.restapi.room;
 
+import com.togezzer.restapi.room.dto.RenameRoomDTO;
 import com.togezzer.restapi.room.dto.JoinRoomDTO;
 import com.togezzer.restapi.room.dto.RoomDTO;
 import jakarta.validation.Valid;
@@ -23,6 +24,12 @@ public class RoomController {
     @ResponseStatus(HttpStatus.CREATED)
     public RoomDTO createRoom(@Valid @RequestBody RoomDTO roomDTO) {
         return this.roomService.create(roomDTO);
+    }
+
+    @PatchMapping("/{uuid}")
+    @ResponseStatus(HttpStatus.OK)
+    public void renameRoom(@PathVariable @NotNull(message = "Room's UUID is required") UUID uuid, @RequestBody @Valid RenameRoomDTO request) {
+        this.roomService.rename(uuid, request);
     }
 
     @PostMapping("{roomUuid}/join")

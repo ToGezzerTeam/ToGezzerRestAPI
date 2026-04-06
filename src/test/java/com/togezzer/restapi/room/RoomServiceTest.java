@@ -1,5 +1,5 @@
 package com.togezzer.restapi.room;
-
+import com.togezzer.restapi.room.dto.RenameRoomDTO;
 import com.togezzer.restapi.exception.AlreadyInRoomException;
 import com.togezzer.restapi.exception.RoomNotFoundException;
 import com.togezzer.restapi.exception.UserNotFoundException;
@@ -22,6 +22,9 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -144,7 +147,7 @@ public class RoomServiceTest {
     void when_room_id_does_not_exist_should_throw_RoomNotFoundException() {
         final var joinRoomDto = new JoinRoomDTO(UUID.randomUUID(), UUID.randomUUID());
 
-        when(this.roomRepository.findByUuid(joinRoomDto.getRoomUuid())).thenReturn(java.util.Optional.empty());
+        when(this.roomRepository.findByUuid(joinRoomDto.getRoomUuid())).thenReturn(Optional.empty());
 
         assertThrows(RoomNotFoundException.class, () -> this.roomService.join(joinRoomDto));
     }
@@ -154,12 +157,61 @@ public class RoomServiceTest {
         final var joinRoomDto = new JoinRoomDTO(UUID.randomUUID(), UUID.randomUUID());
 
         when(this.roomRepository.findByUuid(joinRoomDto.getRoomUuid())).thenReturn(Optional.of(new RoomEntity()));
-        when(this.userRepository.findByUuid(joinRoomDto.getUserUuid())).thenReturn(java.util.Optional.empty());
+        when(this.userRepository.findByUuid(joinRoomDto.getUserUuid())).thenReturn(Optional.empty());
 
         assertThrows(UserNotFoundException.class, () -> this.roomService.join(joinRoomDto));
     }
 
     @Test
+    void should_rename_room_successfully() {
+        // Arrange
+        final var uuid = UUID.randomUUID();
+        final var id = 10L;
+        final var createdAt = Instant.parse("2025-01-01T10:00:00Z");
+
+        final var existingEntity = RoomEntity.builder()
+                .id(id)
+                .uuid(UUID.fromString(uuid.toString()))
+                .name("Old name")
+                .channelType(ChannelType.TEXT)
+                .createdAt(createdAt)
+                .build();
+
+        doReturn(Optional.of(existingEntity))
+                .when(this.roomRepository)
+                .findByUuid(uuid);
+        doReturn(existingEntity).when(this.roomRepository).save(any(RoomEntity.class));
+
+        final var request = new RenameRoomDTO("New name");
+
+        // Act
+        roomService.rename(uuid, request);
+
+        // Assert
+        final var argumentCaptor = ArgumentCaptor.forClass(RoomEntity.class);
+        verify(this.roomRepository).save(argumentCaptor.capture());
+
+        final var saved = argumentCaptor.getValue();
+        assertEquals(id, saved.getId());
+        assertEquals(uuid, saved.getUuid());
+        assertEquals("New name", saved.getName());
+        assertEquals(ChannelType.TEXT, saved.getChannelType());
+        assertEquals(createdAt, saved.getCreatedAt());
+    }
+
+    @Test
+    void should_throw_when_renaming_unknown_room() {
+        // Arrange
+        final var uuid = UUID.randomUUID();
+        doReturn(Optional.empty())
+                .when(this.roomRepository)
+                .findByUuid(uuid);
+
+        // Act + Assert
+        assertThrows(RoomNotFoundException.class, () -> roomService.rename(uuid, new RenameRoomDTO("New name")));
+        verify(this.roomRepository, never()).save(any(RoomEntity.class));
+    }
+
     void when_user_already_in_room_should_throw_AlreadyInRoomException() {
         final var joinRoomDto = new JoinRoomDTO(UUID.randomUUID(), UUID.randomUUID());
         final RoomEntity roomEntity = new RoomEntity();
@@ -186,7 +238,6 @@ public class RoomServiceTest {
 
         verify(this.roomUserRepository).save(any(RoomUserEntity.class));
     }
-
 
     private RoomEntity createRoomEntity(final UUID uuid, final String name) {
         return RoomEntity.builder()
