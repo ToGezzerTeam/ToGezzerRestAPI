@@ -10,6 +10,6 @@ import java.util.UUID;
 @Primary
 @Repository
 public interface RoomRepository extends ListCrudRepository<RoomEntity, Long> {
-    Optional<RoomEntity> findByUuid(UUID s);
+    Optional<RoomEntity> findByUuid(UUID uuid);
     boolean existsByUuid(UUID uuid);
 }
