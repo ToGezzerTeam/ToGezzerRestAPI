@@ -1,9 +1,12 @@
 package com.togezzer.restapi.message.service;
 
 import com.togezzer.restapi.exception.MessageNotOwnedByUserException;
+import com.togezzer.restapi.message.dto.ContentDTO;
+import com.togezzer.restapi.message.dto.CreateMessageDTO;
 import com.togezzer.restapi.message.dto.DeleteMessageDTO;
 import com.togezzer.restapi.message.dto.MessageDTO;
 import com.togezzer.restapi.message.dto.UpdateMessageDTO;
+import com.togezzer.restapi.message.enums.ContentType;
 import com.togezzer.restapi.message.enums.MessageState;
 import com.togezzer.restapi.message.messaging.MessageEventProducer;
 import com.togezzer.restapi.room.RoomRepository;
@@ -73,7 +76,7 @@ public class MessageService {
     }
 
     private MessageDTO buildMessageDTO(MessageDTO messageDTO,UpdateMessageDTO updateMessageDTO){
-        messageDTO.setContent(updateMessageDTO.getContent());
+        messageDTO.getContent().setValue(updateMessageDTO.getMessage());
         messageDTO.setState(MessageState.UPDATED);
         messageDTO.setUpdatedAt(Instant.now());
 
@@ -84,6 +87,25 @@ public class MessageService {
         messageDTO.setState(MessageState.DELETED);
         messageDTO.setDeletedBy(deleteMessageDTO.getUserUuid().toString());
         messageDTO.setDeletedAt(Instant.now());
+
+        return messageDTO;
+    }
+
+    public void createMessage(UUID roomUuid, CreateMessageDTO createMessageDTO) {
+        validateEntryExists(roomUuid, createMessageDTO.getUserUuid());
+        MessageDTO messageDTO = buildMessageDTO(roomUuid, new MessageDTO(), createMessageDTO);
+        messageEventProducer.publishToQueues(messageDTO);
+    }
+
+    private MessageDTO buildMessageDTO(UUID roomUuid, MessageDTO messageDTO, CreateMessageDTO createMessageDTO) {
+        ContentDTO content = ContentDTO.builder().value(createMessageDTO.getMessage()).type(ContentType.TEXT).build();
+        messageDTO.setContent(content);
+        messageDTO.setAnswerTo(createMessageDTO.getAnswerTo());
+        messageDTO.setRoomId(roomUuid.toString());
+        messageDTO.setState(MessageState.CREATED);
+        messageDTO.setCreatedAt(Instant.now());
+        messageDTO.setUuid(UUID.randomUUID().toString());
+        messageDTO.setAuthorId(createMessageDTO.getUserUuid().toString());
 
         return messageDTO;
     }

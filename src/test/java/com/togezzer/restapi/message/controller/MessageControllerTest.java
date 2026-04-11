@@ -1,9 +1,8 @@
 package com.togezzer.restapi.message.controller;
 
-import com.togezzer.restapi.message.dto.ContentDTO;
+import com.togezzer.restapi.message.dto.CreateMessageDTO;
 import com.togezzer.restapi.message.dto.DeleteMessageDTO;
 import com.togezzer.restapi.message.dto.UpdateMessageDTO;
-import com.togezzer.restapi.message.enums.ContentType;
 import com.togezzer.restapi.message.service.MessageService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,6 +21,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
@@ -45,7 +45,7 @@ class MessageControllerTest {
 
         UpdateMessageDTO bodyDto = new UpdateMessageDTO();
         bodyDto.setUserUuid(userUuid);
-        bodyDto.setContent(ContentDTO.builder().type(ContentType.TEXT).value("hi").build());
+        bodyDto.setMessage("hi");
 
         String body = objectMapper.writeValueAsString(bodyDto);
 
@@ -83,7 +83,7 @@ class MessageControllerTest {
 
         UpdateMessageDTO bodyDto = new UpdateMessageDTO();
         bodyDto.setUserUuid(userUuid);
-        bodyDto.setContent(ContentDTO.builder().type(ContentType.TEXT).value("hi").build());
+        bodyDto.setMessage("hi");
 
         String body = objectMapper.writeValueAsString(bodyDto);
 
@@ -132,5 +132,78 @@ class MessageControllerTest {
 
         verifyNoInteractions(messageService);
     }
-}
 
+    @Test
+    void createMessage_returns204_and_calls_service() throws Exception {
+        UUID roomUuid = UUID.randomUUID();
+        UUID userUuid = UUID.randomUUID();
+
+        CreateMessageDTO bodyDto = new CreateMessageDTO();
+        bodyDto.setUserUuid(userUuid);
+        bodyDto.setMessage("hi");
+
+        String body = objectMapper.writeValueAsString(bodyDto);
+
+        mockMvc.perform(
+                        post("/api/messages/{roomUuid}", roomUuid)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(body)
+                )
+                .andExpect(status().isNoContent());
+
+        verify(messageService).createMessage(eq(roomUuid), any(CreateMessageDTO.class));
+    }
+
+    @Test
+    void createMessage_when_missing_userUuid_returns400_and_does_not_call_service() throws Exception {
+        UUID roomUuid = UUID.randomUUID();
+
+        String body = "{\"message\":\"hi\"}";
+
+        mockMvc.perform(
+                        post("/api/messages/{roomUuid}", roomUuid)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(body)
+                )
+                .andExpect(status().isBadRequest());
+
+        verifyNoInteractions(messageService);
+    }
+
+    @Test
+    void createMessage_when_missing_message_returns400_and_does_not_call_service() throws Exception {
+        UUID roomUuid = UUID.randomUUID();
+        UUID userUuid = UUID.randomUUID();
+
+        String body = "{\"userUuid\":\"" + userUuid + "\"}";
+
+        mockMvc.perform(
+                        post("/api/messages/{roomUuid}", roomUuid)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(body)
+                )
+                .andExpect(status().isBadRequest());
+
+        verifyNoInteractions(messageService);
+    }
+
+    @Test
+    void createMessage_when_roomUuid_invalid_returns400_and_does_not_call_service() throws Exception {
+        UUID userUuid = UUID.randomUUID();
+
+        CreateMessageDTO bodyDto = new CreateMessageDTO();
+        bodyDto.setUserUuid(userUuid);
+        bodyDto.setMessage("hi");
+
+        String body = objectMapper.writeValueAsString(bodyDto);
+
+        mockMvc.perform(
+                        post("/api/messages/{roomUuid}", "not-a-uuid")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(body)
+                )
+                .andExpect(status().isBadRequest());
+
+        verifyNoInteractions(messageService);
+    }
+}

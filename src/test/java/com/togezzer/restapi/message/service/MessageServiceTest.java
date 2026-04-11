@@ -2,6 +2,7 @@ package com.togezzer.restapi.message.service;
 
 import com.togezzer.restapi.exception.MessageNotOwnedByUserException;
 import com.togezzer.restapi.message.dto.ContentDTO;
+import com.togezzer.restapi.message.dto.CreateMessageDTO;
 import com.togezzer.restapi.message.dto.DeleteMessageDTO;
 import com.togezzer.restapi.message.dto.MessageDTO;
 import com.togezzer.restapi.message.dto.UpdateMessageDTO;
@@ -43,7 +44,7 @@ class MessageServiceTest {
 
         UpdateMessageDTO update = new UpdateMessageDTO();
         update.setUserUuid(userUuid);
-        update.setContent(ContentDTO.builder().type(ContentType.TEXT).value("new").build());
+        update.setMessage("new");
 
         Instant createdAt = Instant.parse("2025-01-01T00:00:00Z");
         MessageDTO remote = MessageDTO.builder()
@@ -132,7 +133,7 @@ class MessageServiceTest {
 
         UpdateMessageDTO update = new UpdateMessageDTO();
         update.setUserUuid(userUuid);
-        update.setContent(ContentDTO.builder().type(ContentType.TEXT).value("x").build());
+        update.setMessage("x");
 
         when(roomRepository.existsByUuid(roomUuid)).thenReturn(false);
 
@@ -168,5 +169,100 @@ class MessageServiceTest {
 
         verify(messageEventProducer, never()).publishToQueues(any());
     }
-}
 
+    @Test
+    void createMessage_should_publish_created_message() {
+        UUID roomUuid = UUID.randomUUID();
+        UUID userUuid = UUID.randomUUID();
+
+        CreateMessageDTO create = new CreateMessageDTO();
+        create.setUserUuid(userUuid);
+        create.setMessage("hello");
+        create.setAnswerTo(null);
+
+        when(roomRepository.existsByUuid(roomUuid)).thenReturn(true);
+        when(userRepository.existsByUuid(userUuid)).thenReturn(true);
+        when(roomUserRepository.existsByRoomUuidAndUserUuid(roomUuid, userUuid)).thenReturn(true);
+
+        Instant before = Instant.now();
+        messageService.createMessage(roomUuid, create);
+        Instant after = Instant.now();
+
+        ArgumentCaptor<MessageDTO> captor = ArgumentCaptor.forClass(MessageDTO.class);
+        verify(messageEventProducer).publishToQueues(captor.capture());
+
+        MessageDTO published = captor.getValue();
+        assertNotNull(published.getUuid());
+        assertDoesNotThrow(() -> UUID.fromString(published.getUuid()));
+
+        assertEquals(roomUuid.toString(), published.getRoomId());
+        assertEquals(MessageState.CREATED, published.getState());
+        assertNotNull(published.getCreatedAt());
+        assertFalse(published.getCreatedAt().isBefore(before));
+        assertFalse(published.getCreatedAt().isAfter(after));
+
+        assertNotNull(published.getContent());
+        assertEquals(ContentType.TEXT, published.getContent().getType());
+        assertEquals("hello", published.getContent().getValue());
+        assertEquals(userUuid.toString(), published.getAuthorId());
+
+        assertNull(published.getAnswerTo());
+
+        assertNull(published.getUpdatedAt());
+        assertNull(published.getDeletedAt());
+        assertNull(published.getDeletedBy());
+
+        verifyNoInteractions(messageApiClientService);
+    }
+
+    @Test
+    void createMessage_when_room_missing_should_throw_and_not_publish() {
+        UUID roomUuid = UUID.randomUUID();
+        UUID userUuid = UUID.randomUUID();
+
+        CreateMessageDTO create = new CreateMessageDTO();
+        create.setUserUuid(userUuid);
+        create.setMessage("hello");
+
+        when(roomRepository.existsByUuid(roomUuid)).thenReturn(false);
+
+        assertThrows(IllegalArgumentException.class, () -> messageService.createMessage(roomUuid, create));
+
+        verifyNoInteractions(userRepository, roomUserRepository, messageApiClientService, messageEventProducer);
+    }
+
+    @Test
+    void createMessage_when_user_missing_should_throw_and_not_publish() {
+        UUID roomUuid = UUID.randomUUID();
+        UUID userUuid = UUID.randomUUID();
+
+        CreateMessageDTO create = new CreateMessageDTO();
+        create.setUserUuid(userUuid);
+        create.setMessage("hello");
+
+        when(roomRepository.existsByUuid(roomUuid)).thenReturn(true);
+        when(userRepository.existsByUuid(userUuid)).thenReturn(false);
+
+        assertThrows(IllegalArgumentException.class, () -> messageService.createMessage(roomUuid, create));
+
+        verifyNoInteractions(roomUserRepository, messageApiClientService, messageEventProducer);
+    }
+
+    @Test
+    void createMessage_when_user_not_in_room_should_throw_and_not_publish() {
+        UUID roomUuid = UUID.randomUUID();
+        UUID userUuid = UUID.randomUUID();
+
+        CreateMessageDTO create = new CreateMessageDTO();
+        create.setUserUuid(userUuid);
+        create.setMessage("hello");
+
+        when(roomRepository.existsByUuid(roomUuid)).thenReturn(true);
+        when(userRepository.existsByUuid(userUuid)).thenReturn(true);
+        when(roomUserRepository.existsByRoomUuidAndUserUuid(roomUuid, userUuid)).thenReturn(false);
+
+        assertThrows(IllegalArgumentException.class, () -> messageService.createMessage(roomUuid, create));
+
+        verifyNoInteractions(messageApiClientService, messageEventProducer);
+    }
+}
