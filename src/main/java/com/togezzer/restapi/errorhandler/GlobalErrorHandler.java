@@ -1,12 +1,10 @@
 package com.togezzer.restapi.errorhandler;
 
 import com.togezzer.restapi.exception.AlreadyInRoomException;
-import com.togezzer.restapi.exception.MessageNotFoundRemoteException;
 import com.togezzer.restapi.exception.MessageNotOwnedByUserException;
+import com.togezzer.restapi.exception.NotFoundException;
 import com.togezzer.restapi.exception.RemoteApiClientException;
 import com.togezzer.restapi.exception.RemoteApiServerException;
-import com.togezzer.restapi.exception.RoomNotFoundException;
-import com.togezzer.restapi.exception.UserNotFoundException;
 import com.togezzer.restapi.exception.UserNotInRoomException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -15,13 +13,8 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 @RestControllerAdvice
 public class GlobalErrorHandler {
-    @ExceptionHandler(RoomNotFoundException.class)
-    public ResponseEntity<String> handleRoomNotFoundException(RoomNotFoundException ex) {
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage());
-    }
-
-    @ExceptionHandler(UserNotFoundException.class)
-    public ResponseEntity<String> handleUserNotFoundException(UserNotFoundException ex) {
+    @ExceptionHandler(NotFoundException.class)
+    public ResponseEntity<String> handleNotFoundException(NotFoundException ex) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage());
     }
 
@@ -33,11 +26,6 @@ public class GlobalErrorHandler {
     @ExceptionHandler(UserNotInRoomException.class)
     public ResponseEntity<String> handleUserNotInRoomException(UserNotInRoomException ex) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
-    }
-
-    @ExceptionHandler(MessageNotFoundRemoteException.class)
-    public ResponseEntity<String> handleMessageNotFoundRemoteException(MessageNotFoundRemoteException ex) {
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage());
     }
 
     @ExceptionHandler(RemoteApiClientException.class)
