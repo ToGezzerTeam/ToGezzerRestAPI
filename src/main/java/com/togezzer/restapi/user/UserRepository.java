@@ -11,4 +11,5 @@ import java.util.UUID;
 @Repository
 public interface UserRepository extends ListCrudRepository<UserEntity, Long> {
     Optional<UserEntity> findByUuid(UUID s);
+    boolean existsByUuid(UUID uuid);
 }

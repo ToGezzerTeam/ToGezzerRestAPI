@@ -10,7 +10,6 @@ import com.togezzer.restapi.room_users.RoomUserEntity;
 import com.togezzer.restapi.room_users.RoomUserId;
 import com.togezzer.restapi.room_users.RoomUserRepository;
 import com.togezzer.restapi.user.UserRepository;
-import org.jspecify.annotations.NonNull;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -56,20 +55,21 @@ public class RoomService {
                 .build();
     }
 
-    private @NonNull RoomEntity getRoomEntityByUUID(UUID roomId) {
+
+    private RoomEntity getRoomEntityByUUID(UUID roomId) {
         return this.roomRepository.findByUuid(roomId)
                 .orElseThrow(() -> new RoomNotFoundException("Room with ID " + roomId + " does not exist"));
     }
 
-    public void rename(UUID roomId, RenameRoomDTO newName) {
+    public void rename(UUID roomId, RenameRoomDTO renameRoomDTO) {
         final var roomEntity = getRoomEntityByUUID(roomId);
 
-        roomEntity.setName(newName.name());
+        roomEntity.setName(renameRoomDTO.name());
         this.roomRepository.save(roomEntity);
     }
 
-    public void join(final JoinRoomDTO joinRoomDTO) {
-        final var roomEntity = getRoomEntityByUUID(joinRoomDTO.getRoomUuid());
+    public void join(final JoinRoomDTO joinRoomDTO, final UUID roomUuid) {
+        final var roomEntity = getRoomEntityByUUID(roomUuid);
 
         final var userEntity = this.userRepository.findByUuid(joinRoomDTO.getUserUuid())
                 .orElseThrow(() -> new UserNotFoundException("User with ID " + joinRoomDTO.getUserUuid() + " does not exist"));

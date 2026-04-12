@@ -7,7 +7,14 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RestController;
+
 
 import java.util.UUID;
 
@@ -35,7 +42,6 @@ public class RoomController {
     @PostMapping("{roomUuid}/join")
     @ResponseStatus(HttpStatus.OK)
     public void joinRoom(@PathVariable @NotNull(message = "Room's UUID is required") UUID roomUuid, @Valid @RequestBody JoinRoomDTO joinRoomDTO) {
-        joinRoomDTO.setRoomUuid(roomUuid);
-        this.roomService.join(joinRoomDTO);
+        this.roomService.join(joinRoomDTO, roomUuid);
     }
 }

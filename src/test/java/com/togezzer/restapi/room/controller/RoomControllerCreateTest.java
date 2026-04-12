@@ -1,14 +1,8 @@
 package com.togezzer.restapi.room.controller;
 
-import com.togezzer.restapi.exception.AlreadyInRoomException;
-import com.togezzer.restapi.exception.RoomNotFoundException;
-import com.togezzer.restapi.exception.UserNotFoundException;
 import com.togezzer.restapi.room.ChannelType;
-import com.togezzer.restapi.room.RoomService;
-import com.togezzer.restapi.room.dto.JoinRoomDTO;
 import com.togezzer.restapi.room.dto.RoomDTO;
 import org.junit.jupiter.api.Test;
-import org.mockito.Spy;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;

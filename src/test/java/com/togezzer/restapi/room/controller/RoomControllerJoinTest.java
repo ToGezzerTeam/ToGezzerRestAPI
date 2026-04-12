@@ -56,7 +56,7 @@ public class RoomControllerJoinTest {
 
         doThrow(new RoomNotFoundException("room introuvable"))
                 .when(this.roomService)
-                .join(org.mockito.ArgumentMatchers.any(JoinRoomDTO.class));
+                .join(org.mockito.ArgumentMatchers.any(JoinRoomDTO.class), org.mockito.ArgumentMatchers.eq(roomUuid));
 
         final String body = this.objectMapper.writeValueAsString(new JoinRoomDTO(null, userUuid));
 
@@ -76,7 +76,7 @@ public class RoomControllerJoinTest {
 
         doThrow(new UserNotFoundException("user introuvable"))
                 .when(this.roomService)
-                .join(org.mockito.ArgumentMatchers.any(JoinRoomDTO.class));
+                .join(org.mockito.ArgumentMatchers.any(JoinRoomDTO.class), org.mockito.ArgumentMatchers.eq(roomUuid));
 
         final String body = this.objectMapper.writeValueAsString(new JoinRoomDTO(null, userUuid));
 
@@ -96,7 +96,7 @@ public class RoomControllerJoinTest {
 
         doThrow(new AlreadyInRoomException("déjà dans la room"))
                 .when(this.roomService)
-                .join(org.mockito.ArgumentMatchers.any(JoinRoomDTO.class));
+                .join(org.mockito.ArgumentMatchers.any(JoinRoomDTO.class), org.mockito.ArgumentMatchers.eq(roomUuid));
 
         final String body = this.objectMapper.writeValueAsString(new JoinRoomDTO(null, userUuid));
 
