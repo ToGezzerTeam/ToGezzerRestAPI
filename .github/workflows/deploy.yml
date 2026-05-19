@@ -3,7 +3,7 @@ name: Deploy
 on:
   push:
     branches:
-      - main
+      - feat/deploy-images
 
 jobs:
   build:
