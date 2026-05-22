@@ -1,7 +1,5 @@
 package com.togezzer.restapi.server;
 
-import com.togezzer.restapi.exception.NotFoundException;
-import com.togezzer.restapi.exception.RoomNotFoundException;
 import com.togezzer.restapi.exception.ServerNotFoundException;
 import org.springframework.stereotype.Service;
 
@@ -23,7 +21,6 @@ public class ServerService {
     }
 
     public ServerDTO createServer(final ServerDTO serverDTO) {
-        final var uuid = UUID.randomUUID();
 
         final var serverEntityBuilder = ServerEntity.builder()
                 .id(null)
@@ -34,10 +31,6 @@ public class ServerService {
                 .isPublic(serverDTO.isPublic())
                 .logo(serverDTO.getLogo())
                 .background(serverDTO.getBackground());
-
-        if (serverDTO.getName() == null || serverDTO.getName().isBlank()) {
-            serverEntityBuilder.name(uuid.toString());
-        }
 
         final var createdServerEntity = this.serverRepository.save(serverEntityBuilder.build());
         return this.entityToDto(createdServerEntity);
