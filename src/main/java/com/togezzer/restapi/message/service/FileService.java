@@ -28,9 +28,9 @@ public class FileService {
     public void uploadFile(MultipartFile file, UploadFileDTO uploadFileDTO, UUID roomUuid){
         messageUtils.validateEntryExists(roomUuid,uploadFileDTO.getAuthorId());
         ensureBucketExists(roomUuid.toString());
-
         UUID messageUuid = UUID.randomUUID();
-        String url = getPresignedUrl(saveToMinio(file,roomUuid,messageUuid));
+        String objectName = saveToMinio(file,roomUuid,messageUuid);
+        String url = getPresignedUrl(objectName,roomUuid);
         ContentDTO contentDTO = ContentDTO.builder().value(url).type(ContentType.FILE).build();
         MessageDTO messageDTO = messageUtils.buildMessageDTO(roomUuid, contentDTO, null, uploadFileDTO.getAuthorId(), roomUuid);
         messageEventProducer.publishToQueues(messageDTO);
@@ -78,19 +78,20 @@ public class FileService {
     }
 
 
-    public String getPresignedUrl(String objectName) {
+    public String getPresignedUrl(String objectName, UUID roomUuid) {
+        String bucketName = roomUuid.toString();
         try {
             return minioConfig.minioClient().getPresignedObjectUrl(
                     GetPresignedObjectUrlArgs.builder()
                             .method(Method.GET)
-                            .bucket("messages")
+                            .bucket(bucketName)
                             .object(objectName)
                             .expiry(Integer.MAX_VALUE)
                             .build()
             );
         } catch (Exception e) {
             throw new MinioException(
-                    "MinIO: failed to generate presigned URL (bucket=messages, object=" + objectName + "): "
+                    "MinIO: failed to generate presigned URL (bucket=" + bucketName + ", object=" + objectName + "): "
                             + e.getClass().getSimpleName() + ": " + e.getMessage()
             );
         }
