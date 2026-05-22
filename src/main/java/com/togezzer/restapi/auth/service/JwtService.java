@@ -61,7 +61,7 @@ public class JwtService {
      * @throws ExpiredJwtException si le token est expire
      */
     public JwtPayload parseToken(String token) {
-        Claims claims = Jwts.parserBuilder()
+        Claims claims = Jwts.parser()
             .setSigningKey(secretKey)
             .build()
             .parseClaimsJws(token)
@@ -75,4 +75,3 @@ public class JwtService {
         );
     }
 }
-

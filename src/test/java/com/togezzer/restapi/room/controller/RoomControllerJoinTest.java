@@ -1,5 +1,7 @@
 package com.togezzer.restapi.room.controller;
 
+import com.togezzer.restapi.auth.TestAuthTokenFactory;
+import com.togezzer.restapi.auth.service.JwtService;
 import com.togezzer.restapi.exception.AlreadyInRoomException;
 import com.togezzer.restapi.exception.RoomNotFoundException;
 import com.togezzer.restapi.exception.UserNotFoundException;
@@ -31,8 +33,15 @@ public class RoomControllerJoinTest {
     @Autowired
     private ObjectMapper objectMapper;
 
+    @Autowired
+    private JwtService jwtService;
+
     @MockitoBean
     private RoomService roomService;
+
+    private String authHeader() {
+        return TestAuthTokenFactory.createBearerToken(jwtService);
+    }
 
     @Test
     void joinRoom_returns200_andCallsServiceWithRoomUuidFromPath() throws Exception {
@@ -43,6 +52,7 @@ public class RoomControllerJoinTest {
 
         this.mockMvc.perform(
                         post("/api/rooms/{roomUuid}/join", roomUuid)
+                                .header("Authorization", authHeader())
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(body)
                 )
@@ -62,6 +72,7 @@ public class RoomControllerJoinTest {
 
         this.mockMvc.perform(
                         post("/api/rooms/{roomUuid}/join", roomUuid)
+                                .header("Authorization", authHeader())
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(body)
                 )
@@ -82,6 +93,7 @@ public class RoomControllerJoinTest {
 
         this.mockMvc.perform(
                         post("/api/rooms/{roomUuid}/join", roomUuid)
+                                .header("Authorization", authHeader())
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(body)
                 )
@@ -102,6 +114,7 @@ public class RoomControllerJoinTest {
 
         this.mockMvc.perform(
                         post("/api/rooms/{roomUuid}/join", roomUuid)
+                                .header("Authorization", authHeader())
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(body)
                 )
@@ -117,6 +130,7 @@ public class RoomControllerJoinTest {
 
         this.mockMvc.perform(
                         post("/api/rooms/{roomUuid}/join", roomUuid)
+                                .header("Authorization", authHeader())
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(body)
                 )
@@ -132,6 +146,7 @@ public class RoomControllerJoinTest {
 
         this.mockMvc.perform(
                         post("/api/rooms/{roomUuid}/join", "not-a-uuid")
+                                .header("Authorization", authHeader())
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(body)
                 )
