@@ -1,10 +1,14 @@
 package com.togezzer.restapi.message.service;
 
+import com.togezzer.restapi.message.dto.ContentDTO;
+import com.togezzer.restapi.message.dto.MessageDTO;
+import com.togezzer.restapi.message.enums.MessageState;
 import com.togezzer.restapi.room.RoomRepository;
 import com.togezzer.restapi.room_users.RoomUserRepository;
 import com.togezzer.restapi.user.UserRepository;
 import lombok.RequiredArgsConstructor;
 
+import java.time.Instant;
 import java.util.UUID;
 
 @RequiredArgsConstructor
@@ -35,5 +39,18 @@ public class MessageUtils {
         if(!roomUserRepository.existsByRoomUuidAndUserUuid(roomUuid, userUuid)){
             throw new IllegalArgumentException("User with ID " + userUuid + " is not in room with ID " + roomUuid);
         }
+    }
+
+    public MessageDTO buildMessageDTO(UUID roomUuid, ContentDTO content, String answerTo, UUID authorUuid, UUID messageUuid) {
+        MessageDTO messageDTO = new MessageDTO();
+        messageDTO.setContent(content);
+        messageDTO.setAnswerTo(answerTo);
+        messageDTO.setRoomId(roomUuid.toString());
+        messageDTO.setState(MessageState.CREATED);
+        messageDTO.setCreatedAt(Instant.now());
+        messageDTO.setUuid(messageUuid.toString());
+        messageDTO.setAuthorId(authorUuid.toString());
+
+        return messageDTO;
     }
 }

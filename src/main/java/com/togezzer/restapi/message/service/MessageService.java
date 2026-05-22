@@ -66,21 +66,10 @@ public class MessageService {
 
     public void createMessage(UUID roomUuid, CreateMessageDTO createMessageDTO) {
         messageUtils.validateEntryExists(roomUuid, createMessageDTO.getUserUuid());
-        MessageDTO messageDTO = buildMessageDTO(roomUuid, new MessageDTO(), createMessageDTO);
+        UUID messageUuid = UUID.randomUUID();
+        ContentDTO contentDTO = ContentDTO.builder().value(createMessageDTO.getMessage()).type(ContentType.TEXT).build();
+        MessageDTO messageDTO = messageUtils.buildMessageDTO(roomUuid,contentDTO, createMessageDTO.getAnswerTo(), createMessageDTO.getUserUuid(), messageUuid);
         messageEventProducer.publishToQueues(messageDTO);
-    }
-
-    private MessageDTO buildMessageDTO(UUID roomUuid, MessageDTO messageDTO, CreateMessageDTO createMessageDTO) {
-        ContentDTO content = ContentDTO.builder().value(createMessageDTO.getMessage()).type(ContentType.TEXT).build();
-        messageDTO.setContent(content);
-        messageDTO.setAnswerTo(createMessageDTO.getAnswerTo());
-        messageDTO.setRoomId(roomUuid.toString());
-        messageDTO.setState(MessageState.CREATED);
-        messageDTO.setCreatedAt(Instant.now());
-        messageDTO.setUuid(UUID.randomUUID().toString());
-        messageDTO.setAuthorId(createMessageDTO.getUserUuid().toString());
-
-        return messageDTO;
     }
 
 }
