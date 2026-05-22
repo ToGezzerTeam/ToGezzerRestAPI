@@ -1,5 +1,8 @@
 package com.togezzer.restapi.server;
 
+import com.togezzer.restapi.exception.NotFoundException;
+import com.togezzer.restapi.exception.RoomNotFoundException;
+import com.togezzer.restapi.exception.ServerNotFoundException;
 import org.springframework.stereotype.Service;
 
 import java.util.UUID;
@@ -13,8 +16,10 @@ public class ServerService {
         this.serverRepository = serverRepository;
     }
 
-    public ServerDTO getServer(UUID uuid) {
-        return entityToDto(serverRepository.findByUuid(uuid));
+    public ServerDTO getServer(UUID serverId) {
+        return entityToDto(serverRepository.findByUuid(serverId)
+                .orElseThrow(() -> new ServerNotFoundException("Server with ID " + serverId + " does not exist")));
+
     }
 
     public ServerDTO createServer(final ServerDTO serverDTO) {

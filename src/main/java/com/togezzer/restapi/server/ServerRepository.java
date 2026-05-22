@@ -4,11 +4,12 @@ import org.springframework.context.annotation.Primary;
 import org.springframework.data.repository.ListCrudRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.Optional;
 import java.util.UUID;
 
 @Primary
 @Repository
 public interface ServerRepository extends ListCrudRepository<ServerEntity, Long> {
-    ServerEntity findByUuid(UUID uuid);
+    Optional<ServerEntity> findByUuid(UUID uuid);
     boolean existsByUuid(UUID uuid);
 }
