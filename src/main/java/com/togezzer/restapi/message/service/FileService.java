@@ -29,9 +29,10 @@ public class FileService {
         messageUtils.validateEntryExists(roomUuid,uploadFileDTO.getAuthorId());
         ensureBucketExists(roomUuid.toString());
         UUID messageUuid = UUID.randomUUID();
-        String objectName = saveToMinio(file,roomUuid,messageUuid);
-        String url = getPresignedUrl(objectName,roomUuid);
-        ContentDTO contentDTO = ContentDTO.builder().value(url).type(ContentType.FILE).build();
+        String objectName = messageUuid + "_" + file.getOriginalFilename();
+        saveToMinio(file,roomUuid,objectName);
+        String fileUrl = "/api/messages/" + roomUuid + "/files/" + objectName;
+        ContentDTO contentDTO = ContentDTO.builder().value(fileUrl).type(ContentType.FILE).build();
         MessageDTO messageDTO = messageUtils.buildMessageDTO(roomUuid, contentDTO, null, uploadFileDTO.getAuthorId(), roomUuid);
         messageEventProducer.publishToQueues(messageDTO);
     }
@@ -55,10 +56,8 @@ public class FileService {
     }
 
 
-    private String saveToMinio(MultipartFile file, UUID roomUuid, UUID messageUuid) {
+    private void saveToMinio(MultipartFile file, UUID roomUuid, String objectName) {
         String bucketName = roomUuid.toString();
-        String objectName = messageUuid + "_" + file.getOriginalFilename();
-
         try {
             minioConfig.minioClient().putObject(
                     PutObjectArgs.builder()
@@ -68,7 +67,6 @@ public class FileService {
                             .contentType(file.getContentType())
                             .build()
             );
-            return objectName;
         } catch (Exception e) {
             throw new MinioException(
                     "MinIO: upload failed (bucket=" + bucketName + ", object=" + objectName + "): "
@@ -78,7 +76,8 @@ public class FileService {
     }
 
 
-    public String getPresignedUrl(String objectName, UUID roomUuid) {
+    public String getPresignedUrl(String objectName, UUID roomUuid, UUID userUuid) {
+        messageUtils.validateEntryExists(roomUuid, userUuid);
         String bucketName = roomUuid.toString();
         try {
             return minioConfig.minioClient().getPresignedObjectUrl(
@@ -86,7 +85,7 @@ public class FileService {
                             .method(Method.GET)
                             .bucket(bucketName)
                             .object(objectName)
-                            .expiry(Integer.MAX_VALUE)
+                            .expiry(60 * 60 * 24)
                             .build()
             );
         } catch (Exception e) {
