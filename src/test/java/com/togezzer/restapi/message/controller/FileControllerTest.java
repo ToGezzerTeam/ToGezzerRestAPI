@@ -1,4 +1,4 @@
-package com.togezzer.restapi.message;
+package com.togezzer.restapi.message.controller;
 
 import com.togezzer.restapi.message.dto.UploadFileDTO;
 import com.togezzer.restapi.message.service.FileService;
@@ -98,7 +98,7 @@ class FileControllerTest {
         org.mockito.Mockito.when(fileService.getPresignedUrl(objectName, roomUuid, userUuid)).thenReturn(expectedUrl);
 
         mockMvc.perform(
-                        get("/api/messages/rooms/{roomUuid}/files/{objectName}", roomUuid, objectName)
+                        get("/api/messages/{roomUuid}/files/{objectName}", roomUuid, objectName)
                                 .param("userUuid", userUuid.toString())
                 )
                 .andExpect(status().isOk())
@@ -113,7 +113,7 @@ class FileControllerTest {
         String objectName = "file.txt";
 
         mockMvc.perform(
-                        get("/api/messages/rooms/{roomUuid}/files/{objectName}", roomUuid, objectName)
+                        get("/api/messages/{roomUuid}/files/{objectName}", roomUuid, objectName)
                 )
                 .andExpect(status().isBadRequest());
 
