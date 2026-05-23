@@ -16,6 +16,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.Objects;
 import java.util.UUID;
 
 @Service
@@ -29,7 +30,10 @@ public class FileService {
         messageUtils.validateEntryExists(roomUuid,uploadFileDTO.getAuthorId());
         ensureBucketExists(roomUuid.toString());
         UUID messageUuid = UUID.randomUUID();
-        String objectName = messageUuid + "_" + file.getOriginalFilename();
+        String sanitizedFilename = Objects.requireNonNull(file.getOriginalFilename())
+                .replaceAll("\\s+", "_")
+                .replaceAll("[^a-zA-Z0-9._-]", "_");
+        String objectName = messageUuid + "_" + sanitizedFilename;
         saveToMinio(file,roomUuid,objectName);
         String fileUrl = "/api/messages/" + roomUuid + "/files/" + objectName;
         ContentDTO contentDTO = ContentDTO.builder().value(fileUrl).type(ContentType.FILE).build();

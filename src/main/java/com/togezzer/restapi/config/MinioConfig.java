@@ -8,13 +8,13 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class MinioConfig {
 
-    @Value("togezzer.minio.base-url")
+    @Value("${togezzer.minio.base-url}")
     private String minioUrl;
 
-    @Value("togezzer.minio.user")
+    @Value("${togezzer.minio.user}")
     private String minioUser;
 
-    @Value("togezzer.minio.password")
+    @Value("${togezzer.minio.password}")
     private String minioPassword;
 
     @Bean

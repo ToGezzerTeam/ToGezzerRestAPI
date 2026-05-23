@@ -28,7 +28,7 @@ public class FileController {
         this.fileService.uploadFile(file, uploadFileDTO, roomUuid);
     }
 
-    @GetMapping("/rooms/{roomUuid}/files/{objectName}")
+    @GetMapping("{roomUuid}/files/{objectName}")
     public ResponseEntity<String> getFileUrl(
             @PathVariable UUID roomUuid,
             @PathVariable String objectName,
