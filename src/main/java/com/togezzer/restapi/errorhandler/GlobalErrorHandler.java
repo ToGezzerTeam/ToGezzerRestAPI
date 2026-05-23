@@ -2,6 +2,7 @@ package com.togezzer.restapi.errorhandler;
 
 import com.togezzer.restapi.exception.AlreadyInRoomException;
 import com.togezzer.restapi.exception.MessageNotOwnedByUserException;
+import com.togezzer.restapi.exception.MinioException;
 import com.togezzer.restapi.exception.NotFoundException;
 import com.togezzer.restapi.exception.RemoteApiClientException;
 import com.togezzer.restapi.exception.RemoteApiServerException;
@@ -30,6 +31,11 @@ public class GlobalErrorHandler {
 
     @ExceptionHandler(RemoteApiClientException.class)
     public ResponseEntity<String> handleRemoteApiClientException(RemoteApiClientException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_GATEWAY).body(ex.getMessage());
+    }
+
+    @ExceptionHandler(MinioException.class)
+    public ResponseEntity<String> handleRemoteApiClientException(MinioException ex) {
         return ResponseEntity.status(HttpStatus.BAD_GATEWAY).body(ex.getMessage());
     }
 
