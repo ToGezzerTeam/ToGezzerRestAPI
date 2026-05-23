@@ -1,4 +1,4 @@
-package com.togezzer.restapi.server;
+package com.togezzer.restapi.server.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.NotBlank;

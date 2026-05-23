@@ -1,6 +1,8 @@
-package com.togezzer.restapi.server;
+package com.togezzer.restapi.server.controller;
 
-import com.togezzer.restapi.room.dto.RenameRoomDTO;
+import com.togezzer.restapi.server.ServerEntity;
+import com.togezzer.restapi.server.ServerRepository;
+import com.togezzer.restapi.server.dto.ServerDTO;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;

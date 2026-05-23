@@ -1,6 +1,12 @@
 package com.togezzer.restapi.server;
 
 import com.togezzer.restapi.exception.ServerNotFoundException;
+import com.togezzer.restapi.server.dto.JoinServerDTO;
+import com.togezzer.restapi.server.dto.ServerDTO;
+import com.togezzer.restapi.server_users.ServerUserEntity;
+import com.togezzer.restapi.server_users.ServerUserRepository;
+import com.togezzer.restapi.user.UserEntity;
+import com.togezzer.restapi.user.UserRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -12,10 +18,9 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 public class ServerServiceTest {
@@ -24,7 +29,13 @@ public class ServerServiceTest {
     ServerService serverService;
 
     @Mock
+    UserRepository userRepository;
+
+    @Mock
     ServerRepository serverRepository;
+
+    @Mock
+    ServerUserRepository serverUserRepository;
 
     @Test
     void shouldCreateServerSuccessfully(){
@@ -115,6 +126,22 @@ public class ServerServiceTest {
                 .background("blue")
                 .build();
 
-        assertThrows(ServerNotFoundException.class, () -> this.serverService.getServer(uuidToFind));
+        assertThrows(ServerNotFoundException.class, () -> this.serverService.getServerByUuid(uuidToFind));
+    }
+
+    @Test
+    void should_join_server_successfully(){
+        final var joinServerDTO = new JoinServerDTO(UUID.randomUUID(), UUID.randomUUID());
+        final var serverUuid = UUID.randomUUID();
+        final ServerEntity serverEntity = new ServerEntity();
+        final UserEntity userEntity = new UserEntity();
+
+        when(this.serverRepository.findByUuid(serverUuid)).thenReturn(Optional.of(serverEntity));
+        when(this.userRepository.findByUuid(joinServerDTO.getUserUuid())).thenReturn(Optional.of(userEntity));
+        when(this.serverUserRepository.existsByServer_IdAndUser_Id(serverEntity.getId(), userEntity.getId())).thenReturn(false);
+
+        this.serverService.join(joinServerDTO, serverUuid);
+
+        verify(this.serverUserRepository).save(any(ServerUserEntity.class));
     }
 }

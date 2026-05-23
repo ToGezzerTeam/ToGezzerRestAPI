@@ -1,7 +1,8 @@
 package com.togezzer.restapi.server;
 
+import com.togezzer.restapi.server.dto.JoinServerDTO;
+import com.togezzer.restapi.server.dto.ServerDTO;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -28,5 +29,10 @@ public class ServerController {
     public ServerDTO createServer(@Valid @RequestBody ServerDTO serverDTO){
         return serverService.createServer(serverDTO);
     }
-}
 
+    @PostMapping("/{serverUuid}/join")
+    @ResponseStatus(HttpStatus.OK)
+    public void joinServer(@PathVariable @NotNull(message = "Server's UUID is required") UUID serverUuid, @Valid @RequestBody JoinServerDTO joinServerDTO) {
+        this.serverService.join(joinServerDTO, serverUuid);
+    }
+}

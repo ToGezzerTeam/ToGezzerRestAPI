@@ -1,6 +1,14 @@
 package com.togezzer.restapi.server;
 
+import com.togezzer.restapi.exception.AlreadyInServerException;
 import com.togezzer.restapi.exception.ServerNotFoundException;
+import com.togezzer.restapi.exception.UserNotFoundException;
+import com.togezzer.restapi.server.dto.JoinServerDTO;
+import com.togezzer.restapi.server.dto.ServerDTO;
+import com.togezzer.restapi.server_users.ServerUserEntity;
+import com.togezzer.restapi.server_users.ServerUserId;
+import com.togezzer.restapi.server_users.ServerUserRepository;
+import com.togezzer.restapi.user.UserRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.UUID;
@@ -9,15 +17,22 @@ import java.util.UUID;
 public class ServerService {
 
     private final ServerRepository serverRepository;
+    private final UserRepository userRepository;
+    private final ServerUserRepository serverUserRepository;
 
-    public ServerService(ServerRepository serverRepository){
+    public ServerService(ServerRepository serverRepository, UserRepository userRepository, ServerUserRepository serverUserRepository){
         this.serverRepository = serverRepository;
+        this.userRepository = userRepository;
+        this.serverUserRepository = serverUserRepository;
+    }
+
+    public ServerEntity getServerByUuid(UUID serverId) {
+        return serverRepository.findByUuid(serverId)
+                .orElseThrow(() -> new ServerNotFoundException("Server with ID " + serverId + " does not exist"));
     }
 
     public ServerDTO getServer(UUID serverId) {
-        return entityToDto(serverRepository.findByUuid(serverId)
-                .orElseThrow(() -> new ServerNotFoundException("Server with ID " + serverId + " does not exist")));
-
+        return this.entityToDto(getServerByUuid(serverId));
     }
 
     public ServerDTO createServer(final ServerDTO serverDTO) {
@@ -47,5 +62,25 @@ public class ServerService {
                 .logo(serverEntity.getLogo())
                 .background(serverEntity.getBackground())
                 .build();
+    }
+
+    public void join(final JoinServerDTO joinServerDTO, UUID serverUuid) {
+        final var serverEntity = getServerByUuid(serverUuid);
+
+        final var userEntity = this.userRepository.findByUuid(joinServerDTO.getUserUuid())
+                .orElseThrow(() -> new UserNotFoundException("User with ID " + joinServerDTO.getUserUuid() + " does not exist"));
+
+        if (this.serverUserRepository.existsByServer_IdAndUser_Id(serverEntity.getId(), userEntity.getId())) {
+            throw new AlreadyInServerException("User with ID " + joinServerDTO.getUserUuid() + " is already in the server with ID " + joinServerDTO.getServerUuid());
+        }
+
+        final var serverUserId = new ServerUserId(serverEntity.getId(), userEntity.getId());
+        final var serverUserEntity = ServerUserEntity.builder()
+                .id(serverUserId)
+                .server(serverEntity)
+                .user(userEntity)
+                .build();
+
+        this.serverUserRepository.save(serverUserEntity);
     }
 }
