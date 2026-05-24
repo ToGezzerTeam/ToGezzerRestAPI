@@ -2,6 +2,7 @@ package com.togezzer.restapi.server;
 
 import com.togezzer.restapi.exception.*;
 import com.togezzer.restapi.server.dto.JoinServerDTO;
+import com.togezzer.restapi.server.dto.RenameServerDTO;
 import com.togezzer.restapi.server.dto.ServerDTO;
 import com.togezzer.restapi.server_users.ServerUserEntity;
 import com.togezzer.restapi.server_users.ServerUserRepository;
@@ -153,6 +154,39 @@ public class ServerServiceTest {
         assertThrows(AlreadyInServerException.class, () -> this.serverService.join(joinServerDTO, serverUuid));
     }
 
+    @Test
+    void shouldRenameServerSuccessfully() {
+        final var existingServerEntity = createServerEntity();
+
+        doReturn(Optional.of(existingServerEntity))
+                .when(this.serverRepository)
+                .findByUuid(existingServerEntity.getUuid());
+        doReturn(existingServerEntity).when(this.serverRepository).save(any(ServerEntity.class));
+
+        final var request = new RenameServerDTO("New name");
+
+        serverService.renameServer(existingServerEntity.getUuid(), request);
+
+        final var argumentCaptor = ArgumentCaptor.forClass(ServerEntity.class);
+        verify(this.serverRepository).save(argumentCaptor.capture());
+
+        final var saved = argumentCaptor.getValue();
+        assertEquals("New name", saved.getName());
+    }
+
+    @Test
+    void shouldThrowExceptionWhenRenamingUnknownRoom() {
+        // Arrange
+        final var uuid = UUID.randomUUID();
+        doReturn(Optional.empty())
+                .when(this.serverRepository)
+                .findByUuid(uuid);
+
+        // Act + Assert
+        assertThrows(ServerNotFoundException.class, () -> serverService.renameServer(uuid, new RenameServerDTO("New name")));
+        verify(this.serverRepository, never()).save(any(ServerEntity.class));
+    }
+
     private ServerEntity createServerEntity() {
         return ServerEntity.builder()
                 .id(1L)
@@ -177,6 +211,5 @@ public class ServerServiceTest {
                 .logo("logo")
                 .background("blue")
                 .build();
-
     }
 }

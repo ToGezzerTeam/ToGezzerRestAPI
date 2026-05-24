@@ -4,6 +4,7 @@ import com.togezzer.restapi.exception.AlreadyInServerException;
 import com.togezzer.restapi.exception.ServerNotFoundException;
 import com.togezzer.restapi.exception.UserNotFoundException;
 import com.togezzer.restapi.server.dto.JoinServerDTO;
+import com.togezzer.restapi.server.dto.RenameServerDTO;
 import com.togezzer.restapi.server.dto.ServerDTO;
 import com.togezzer.restapi.server_users.ServerUserEntity;
 import com.togezzer.restapi.server_users.ServerUserId;
@@ -63,6 +64,14 @@ public class ServerService {
                 .background(serverEntity.getBackground())
                 .build();
     }
+
+    public void renameServer(UUID roomId, RenameServerDTO renameServerDTO) {
+        final var serverEntity = getServerByUuid(roomId);
+
+        serverEntity.setName(renameServerDTO.name());
+        this.serverRepository.save(serverEntity);
+    }
+
 
     public void join(final JoinServerDTO joinServerDTO, UUID serverUuid) {
         final var serverEntity = getServerByUuid(serverUuid);

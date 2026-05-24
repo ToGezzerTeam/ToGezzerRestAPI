@@ -1,6 +1,7 @@
 package com.togezzer.restapi.server;
 
 import com.togezzer.restapi.server.dto.JoinServerDTO;
+import com.togezzer.restapi.server.dto.RenameServerDTO;
 import com.togezzer.restapi.server.dto.ServerDTO;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
@@ -34,5 +35,11 @@ public class ServerController {
     @ResponseStatus(HttpStatus.OK)
     public void joinServer(@PathVariable @NotNull(message = "Server's UUID is required") UUID serverUuid, @Valid @RequestBody JoinServerDTO joinServerDTO) {
         this.serverService.join(joinServerDTO, serverUuid);
+    }
+
+    @PatchMapping("/{serverUuid}/rename")
+    @ResponseStatus(HttpStatus.OK)
+    public void renameServer(@PathVariable @NotNull(message = "Server's UUID is required") UUID serverUuid, @Valid @RequestBody RenameServerDTO request){
+        this.serverService.renameServer(serverUuid, request);
     }
 }
