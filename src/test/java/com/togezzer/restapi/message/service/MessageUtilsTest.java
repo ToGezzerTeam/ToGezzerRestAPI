@@ -181,6 +181,8 @@ class MessageUtilsTest {
     void applyMessageDeletion_shouldSetDeletedStateAndMetadata() {
         UUID userUuid = UUID.randomUUID();
         MessageDTO messageDTO = new MessageDTO();
+        ContentDTO contentDTO = ContentDTO.builder().type(ContentType.TEXT).value("test").build();
+        messageDTO.setContent(contentDTO);
 
         Instant before = Instant.now();
         MessageDTO result = messageUtils.applyMessageDeletion(messageDTO, userUuid);
@@ -191,6 +193,7 @@ class MessageUtilsTest {
         assertNotNull(result.getDeletedAt());
         assertFalse(result.getDeletedAt().isBefore(before));
         assertFalse(result.getDeletedAt().isAfter(after));
+        assertEquals("",result.getContent().getValue());
     }
 
     @Test

@@ -68,6 +68,7 @@ public class MessageUtils {
         messageDTO.setState(MessageState.DELETED);
         messageDTO.setDeletedBy(userUuid.toString());
         messageDTO.setDeletedAt(Instant.now());
+        messageDTO.getContent().setValue("");
 
         return messageDTO;
     }

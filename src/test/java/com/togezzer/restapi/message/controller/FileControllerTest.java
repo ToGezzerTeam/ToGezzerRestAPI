@@ -57,7 +57,7 @@ class FileControllerTest {
         );
 
         mockMvc.perform(
-                        multipart("/api/messages/{roomUuid}/file", roomUuid)
+                        multipart("/api/messages/{roomUuid}/files", roomUuid)
                                 .file(dataPart)
                                 .file(filePart)
                                 .contentType(MediaType.MULTIPART_FORM_DATA)
@@ -79,7 +79,7 @@ class FileControllerTest {
         );
 
         mockMvc.perform(
-                        multipart("/api/messages/{roomUuid}/file", roomUuid)
+                        multipart("/api/messages/{roomUuid}/files", roomUuid)
                                 .file(filePart)
                                 .contentType(MediaType.MULTIPART_FORM_DATA)
                 )
@@ -99,7 +99,7 @@ class FileControllerTest {
         org.mockito.Mockito.when(fileService.getPresignedUrl(objectName, roomUuid, userUuid)).thenReturn(expectedUrl);
 
         mockMvc.perform(
-                        get("/api/messages/{roomUuid}/file/{objectName}", roomUuid, objectName)
+                        get("/api/messages/{roomUuid}/files/{objectName}", roomUuid, objectName)
                                 .param("userUuid", userUuid.toString())
                 )
                 .andExpect(status().isOk())
@@ -114,7 +114,7 @@ class FileControllerTest {
         String objectName = "file.txt";
 
         mockMvc.perform(
-                        get("/api/messages/{roomUuid}/file/{objectName}", roomUuid, objectName)
+                        get("/api/messages/{roomUuid}/files/{objectName}", roomUuid, objectName)
                 )
                 .andExpect(status().isBadRequest());
 
@@ -129,7 +129,7 @@ class FileControllerTest {
         String objectName = "file.txt";
 
         mockMvc.perform(
-                        delete("/api/messages/{roomUuid}/file/{objectName}", roomUuid, objectName)
+                        delete("/api/messages/{roomUuid}/files/{objectName}", roomUuid, objectName)
                                 .param("userUuid", userUuid.toString())
                                 .param("messageUuid", messageUuid.toString())
                                 .accept(MediaType.APPLICATION_JSON)
@@ -146,7 +146,7 @@ class FileControllerTest {
         String objectName = "file.txt";
 
         mockMvc.perform(
-                        delete("/api/messages/{roomUuid}/file/{objectName}", roomUuid, objectName)
+                        delete("/api/messages/{roomUuid}/files/{objectName}", roomUuid, objectName)
                                 .param("userUuid", userUuid.toString())
                                 .accept(MediaType.APPLICATION_JSON)
                 )

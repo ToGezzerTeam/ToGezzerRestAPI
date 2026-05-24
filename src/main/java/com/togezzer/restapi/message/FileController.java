@@ -16,7 +16,7 @@ import java.util.UUID;
 
 @RequiredArgsConstructor
 @RestController
-@RequestMapping(path = "/api/messages/{roomUuid}/file", produces = MediaType.APPLICATION_JSON_VALUE)
+@RequestMapping(path = "/api/messages/{roomUuid}/files", produces = MediaType.APPLICATION_JSON_VALUE)
 
 @Validated
 public class FileController {
