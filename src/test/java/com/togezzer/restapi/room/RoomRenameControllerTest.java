@@ -1,5 +1,7 @@
 package com.togezzer.restapi.room;
 
+import com.togezzer.restapi.auth.TestAuthTokenFactory;
+import com.togezzer.restapi.auth.service.JwtService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.togezzer.restapi.room.dto.RenameRoomDTO;
@@ -25,7 +27,14 @@ class RoomRenameControllerTest {
     @Autowired
     private MockMvc mockMvc;
 
+    @Autowired
+    private JwtService jwtService;
+
     private final ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
+
+    private String authHeader() {
+        return TestAuthTokenFactory.createBearerToken(jwtService);
+    }
 
     @Test
     void should_rename_room_successfully() throws Exception {
@@ -36,6 +45,7 @@ class RoomRenameControllerTest {
                 .build();
 
         final var createResponse = mockMvc.perform(post("/api/rooms")
+                        .header("Authorization", authHeader())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(createRequest)))
                 .andExpect(status().isCreated())
@@ -49,6 +59,7 @@ class RoomRenameControllerTest {
         final var renameRequest = new RenameRoomDTO("New name");
 
         mockMvc.perform(patch("/api/rooms/{uuid}", createdRoom.getUuid())
+                        .header("Authorization", authHeader())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(renameRequest)))
                 .andExpect(status().isOk());
@@ -60,6 +71,7 @@ class RoomRenameControllerTest {
         final var request = new RenameRoomDTO("   ");
 
         mockMvc.perform(patch("/api/rooms/{uuid}", uuid)
+                        .header("Authorization", authHeader())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest());
@@ -70,6 +82,7 @@ class RoomRenameControllerTest {
         final var uuid = UUID.randomUUID();
 
         mockMvc.perform(patch("/api/rooms/{uuid}", uuid)
+                        .header("Authorization", authHeader())
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isBadRequest());
     }
@@ -80,10 +93,10 @@ class RoomRenameControllerTest {
         final var request = new RenameRoomDTO("New name");
 
         mockMvc.perform(patch("/api/rooms/{uuid}", uuid)
+                        .header("Authorization", authHeader())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isNotFound())
                 .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.content().string(containsString("does not exist")));
     }
 }
-
