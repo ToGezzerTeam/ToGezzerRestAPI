@@ -244,6 +244,7 @@ class MessageControllerTest {
 
         mockMvc.perform(
                         get("/api/messages/{roomUuid}", roomUuid)
+                                .header("Authorization", authHeader())
                                 .param("userUuid", userUuid.toString())
                                 .param("messageUuid", messageUuid.toString())
                                 .param("pageSize", "50")
@@ -267,6 +268,7 @@ class MessageControllerTest {
 
         mockMvc.perform(
                         get("/api/messages/{roomUuid}", roomUuid)
+                                .header("Authorization", authHeader())
                                 .param("userUuid", userUuid.toString())
                 )
                 .andExpect(status().isOk());
@@ -278,7 +280,8 @@ class MessageControllerTest {
     void getMessages_when_missing_userUuid_returns400_and_does_not_call_service() throws Exception {
         UUID roomUuid = UUID.randomUUID();
 
-        mockMvc.perform(get("/api/messages/{roomUuid}", roomUuid))
+        mockMvc.perform(get("/api/messages/{roomUuid}", roomUuid)
+                        .header("Authorization", authHeader()))
                 .andExpect(status().isBadRequest());
 
         verifyNoInteractions(messageService);
@@ -290,6 +293,7 @@ class MessageControllerTest {
 
         mockMvc.perform(
                         get("/api/messages/{roomUuid}", "not-a-uuid")
+                                .header("Authorization", authHeader())
                                 .param("userUuid", userUuid.toString())
                 )
                 .andExpect(status().isBadRequest());
@@ -304,6 +308,7 @@ class MessageControllerTest {
 
         mockMvc.perform(
                         get("/api/messages/{roomUuid}", roomUuid)
+                                .header("Authorization", authHeader())
                                 .param("userUuid", userUuid.toString())
                                 .param("pageSize", "0")
                 )
