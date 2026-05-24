@@ -4,6 +4,7 @@ import com.togezzer.restapi.message.dto.ContentDTO;
 import com.togezzer.restapi.message.dto.CreateMessageDTO;
 import com.togezzer.restapi.message.dto.DeleteMessageDTO;
 import com.togezzer.restapi.message.dto.MessageDTO;
+import com.togezzer.restapi.message.dto.MessagesPageResponseDto;
 import com.togezzer.restapi.message.dto.UpdateMessageDTO;
 import com.togezzer.restapi.message.enums.ContentType;
 import com.togezzer.restapi.message.messaging.MessageEventProducer;
@@ -18,6 +19,7 @@ import java.util.UUID;
 public class MessageService {
     private final MessageEventProducer messageEventProducer;
     private final MessageUtils messageUtils;
+    private final MessageApiClientService messageApiClientService;
 
     public void updateMessage(UUID roomUuid, UUID messageUuid, UpdateMessageDTO updateMessageDTO) {
         messageUtils.validateEntryExists(roomUuid, updateMessageDTO.getUserUuid());
@@ -40,6 +42,11 @@ public class MessageService {
         ContentDTO contentDTO = ContentDTO.builder().value(createMessageDTO.getMessage()).type(ContentType.TEXT).build();
         MessageDTO messageDTO = messageUtils.createMessageDTO(roomUuid,contentDTO, createMessageDTO.getAnswerTo(), createMessageDTO.getUserUuid(), messageUuid);
         messageEventProducer.publishToQueues(messageDTO);
+    }
+
+    public MessagesPageResponseDto getMessages(UUID roomUuid, String messageUuid, int pageSize, UUID userUuid) {
+        messageUtils.validateEntryExists(roomUuid, userUuid);
+        return messageApiClientService.getMessagesByRoomId(roomUuid, messageUuid, pageSize);
     }
 
 }
