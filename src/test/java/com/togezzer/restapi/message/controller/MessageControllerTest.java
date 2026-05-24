@@ -5,6 +5,8 @@ import com.togezzer.restapi.message.dto.DeleteMessageDTO;
 import com.togezzer.restapi.message.dto.MessagesPageResponseDto;
 import com.togezzer.restapi.message.dto.UpdateMessageDTO;
 import com.togezzer.restapi.message.service.MessageService;
+import com.togezzer.restapi.auth.TestAuthTokenFactory;
+import com.togezzer.restapi.auth.service.JwtService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -41,8 +43,15 @@ class MessageControllerTest {
     @Autowired
     private ObjectMapper objectMapper;
 
+    @Autowired
+    private JwtService jwtService;
+
     @MockitoBean
     private MessageService messageService;
+
+    private String authHeader() {
+        return TestAuthTokenFactory.createBearerToken(jwtService);
+    }
 
     @Test
     void updateMessage_returns204_and_calls_service() throws Exception {
@@ -58,6 +67,7 @@ class MessageControllerTest {
 
         mockMvc.perform(
                         patch("/api/messages/{roomUuid}/{messageUuid}", roomUuid, messageUuid)
+                                .header("Authorization", authHeader())
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(body)
                 )
@@ -75,6 +85,7 @@ class MessageControllerTest {
 
         mockMvc.perform(
                         patch("/api/messages/{roomUuid}/{messageUuid}", roomUuid, messageUuid)
+                                .header("Authorization", authHeader())
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(body)
                 )
@@ -96,6 +107,7 @@ class MessageControllerTest {
 
         mockMvc.perform(
                         patch("/api/messages/{roomUuid}/{messageUuid}", "not-a-uuid", messageUuid)
+                                .header("Authorization", authHeader())
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(body)
                 )
@@ -117,6 +129,7 @@ class MessageControllerTest {
 
         mockMvc.perform(
                         delete("/api/messages/{roomUuid}/{messageUuid}", roomUuid, messageUuid)
+                                .header("Authorization", authHeader())
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(body)
                 )
@@ -132,6 +145,7 @@ class MessageControllerTest {
 
         mockMvc.perform(
                         delete("/api/messages/{roomUuid}/{messageUuid}", roomUuid, messageUuid)
+                                .header("Authorization", authHeader())
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content("{}")
                 )
@@ -153,6 +167,7 @@ class MessageControllerTest {
 
         mockMvc.perform(
                         post("/api/messages/{roomUuid}", roomUuid)
+                                .header("Authorization", authHeader())
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(body)
                 )
@@ -169,6 +184,7 @@ class MessageControllerTest {
 
         mockMvc.perform(
                         post("/api/messages/{roomUuid}", roomUuid)
+                                .header("Authorization", authHeader())
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(body)
                 )
@@ -186,6 +202,7 @@ class MessageControllerTest {
 
         mockMvc.perform(
                         post("/api/messages/{roomUuid}", roomUuid)
+                                .header("Authorization", authHeader())
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(body)
                 )
@@ -206,6 +223,7 @@ class MessageControllerTest {
 
         mockMvc.perform(
                         post("/api/messages/{roomUuid}", "not-a-uuid")
+                                .header("Authorization", authHeader())
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(body)
                 )
