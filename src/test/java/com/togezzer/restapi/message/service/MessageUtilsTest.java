@@ -1,5 +1,6 @@
 package com.togezzer.restapi.message.service;
 
+import com.togezzer.restapi.exception.MessageNotOwnedByUserException;
 import com.togezzer.restapi.message.dto.ContentDTO;
 import com.togezzer.restapi.message.dto.MessageDTO;
 import com.togezzer.restapi.message.enums.ContentType;
@@ -31,11 +32,14 @@ class MessageUtilsTest {
     @Mock
     private RoomUserRepository roomUserRepository;
 
+    @Mock
+    private MessageApiClientService messageApiClientService;
+
     private MessageUtils messageUtils;
 
     @BeforeEach
     void setUp() {
-        messageUtils = new MessageUtils(roomRepository, userRepository, roomUserRepository);
+        messageUtils = new MessageUtils(roomRepository, userRepository, roomUserRepository, messageApiClientService);
     }
 
     @Test
@@ -110,7 +114,7 @@ class MessageUtilsTest {
 
         Instant before = Instant.now();
 
-        MessageDTO messageDTO = messageUtils.buildMessageDTO(
+        MessageDTO messageDTO = messageUtils.createMessageDTO(
                 roomUuid,
                 content,
                 null,
@@ -144,7 +148,7 @@ class MessageUtilsTest {
 
         String answerTo = UUID.randomUUID().toString();
 
-        MessageDTO messageDTO = messageUtils.buildMessageDTO(
+        MessageDTO messageDTO = messageUtils.createMessageDTO(
                 roomUuid,
                 content,
                 answerTo,
@@ -153,5 +157,74 @@ class MessageUtilsTest {
         );
 
         assertEquals(answerTo, messageDTO.getAnswerTo());
+    }
+
+    @Test
+    void applyMessageUpdate_shouldUpdateContentStateAndTimestamp() {
+        MessageDTO messageDTO = new MessageDTO();
+        ContentDTO content = new ContentDTO();
+        content.setValue("old message");
+        messageDTO.setContent(content);
+
+        Instant before = Instant.now();
+        MessageDTO result = messageUtils.applyMessageUpdate(messageDTO, "new message");
+        Instant after = Instant.now();
+
+        assertEquals("new message", result.getContent().getValue());
+        assertEquals(MessageState.UPDATED, result.getState());
+        assertNotNull(result.getUpdatedAt());
+        assertFalse(result.getUpdatedAt().isBefore(before));
+        assertFalse(result.getUpdatedAt().isAfter(after));
+    }
+
+    @Test
+    void applyMessageDeletion_shouldSetDeletedStateAndMetadata() {
+        UUID userUuid = UUID.randomUUID();
+        MessageDTO messageDTO = new MessageDTO();
+
+        Instant before = Instant.now();
+        MessageDTO result = messageUtils.applyMessageDeletion(messageDTO, userUuid);
+        Instant after = Instant.now();
+
+        assertEquals(MessageState.DELETED, result.getState());
+        assertEquals(userUuid.toString(), result.getDeletedBy());
+        assertNotNull(result.getDeletedAt());
+        assertFalse(result.getDeletedAt().isBefore(before));
+        assertFalse(result.getDeletedAt().isAfter(after));
+    }
+
+    @Test
+    void getMessage_shouldDelegateToApiClient() {
+        UUID roomUuid = UUID.randomUUID();
+        UUID messageUuid = UUID.randomUUID();
+        MessageDTO expected = new MessageDTO();
+
+        when(messageApiClientService.getMessageByRoomUuidAndMessageUuid(roomUuid, messageUuid)).thenReturn(expected);
+
+        MessageDTO result = messageUtils.getMessage(roomUuid, messageUuid);
+
+        assertEquals(expected, result);
+    }
+
+    @Test
+    void isAuthorOfMessage_whenUserIsAuthor_shouldNotThrow() {
+        UUID userUuid = UUID.randomUUID();
+        MessageDTO messageDTO = new MessageDTO();
+        messageDTO.setAuthorId(userUuid.toString());
+        messageDTO.setUuid(UUID.randomUUID().toString());
+
+        assertDoesNotThrow(() -> messageUtils.isAuthorOfMessage(userUuid, messageDTO));
+    }
+
+    @Test
+    void isAuthorOfMessage_whenUserIsNotAuthor_shouldThrow() {
+        UUID userUuid = UUID.randomUUID();
+        UUID authorUuid = UUID.randomUUID();
+        MessageDTO messageDTO = new MessageDTO();
+        messageDTO.setAuthorId(authorUuid.toString());
+        messageDTO.setUuid(UUID.randomUUID().toString());
+
+        assertThrows(MessageNotOwnedByUserException.class,
+                () -> messageUtils.isAuthorOfMessage(userUuid, messageDTO));
     }
 }

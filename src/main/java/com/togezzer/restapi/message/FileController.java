@@ -14,13 +14,13 @@ import java.util.UUID;
 
 @RequiredArgsConstructor
 @RestController
-@RequestMapping(path = "/api/messages", produces = MediaType.APPLICATION_JSON_VALUE)
+@RequestMapping(path = "/api/messages/{roomUuid}/file", produces = MediaType.APPLICATION_JSON_VALUE)
 
 
 public class FileController {
     private final FileService fileService;
 
-    @PostMapping("{roomUuid}/file")
+    @PostMapping
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void uploadFile(@PathVariable UUID roomUuid,
                            @RequestPart("data") @Valid UploadFileDTO uploadFileDTO,
@@ -28,13 +28,22 @@ public class FileController {
         this.fileService.uploadFile(file, uploadFileDTO, roomUuid);
     }
 
-    @GetMapping("{roomUuid}/files/{objectName}")
+    @GetMapping("/{objectName}")
     public ResponseEntity<String> getFileUrl(
             @PathVariable UUID roomUuid,
             @PathVariable String objectName,
             @RequestParam UUID userUuid) {
         String url = fileService.getPresignedUrl(objectName, roomUuid, userUuid);
         return ResponseEntity.ok(url);
+    }
+
+    @DeleteMapping("/{objectName}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteFile(@PathVariable UUID roomUuid,
+                           @PathVariable String objectName,
+                           @RequestParam UUID userUuid,
+                           @RequestParam UUID messageUuid) {
+        this.fileService.deleteFile(objectName, roomUuid, userUuid, messageUuid);
     }
 
 }

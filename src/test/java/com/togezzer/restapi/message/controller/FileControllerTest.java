@@ -98,7 +98,7 @@ class FileControllerTest {
         org.mockito.Mockito.when(fileService.getPresignedUrl(objectName, roomUuid, userUuid)).thenReturn(expectedUrl);
 
         mockMvc.perform(
-                        get("/api/messages/{roomUuid}/files/{objectName}", roomUuid, objectName)
+                        get("/api/messages/{roomUuid}/file/{objectName}", roomUuid, objectName)
                                 .param("userUuid", userUuid.toString())
                 )
                 .andExpect(status().isOk())
@@ -113,7 +113,7 @@ class FileControllerTest {
         String objectName = "file.txt";
 
         mockMvc.perform(
-                        get("/api/messages/{roomUuid}/files/{objectName}", roomUuid, objectName)
+                        get("/api/messages/{roomUuid}/file/{objectName}", roomUuid, objectName)
                 )
                 .andExpect(status().isBadRequest());
 

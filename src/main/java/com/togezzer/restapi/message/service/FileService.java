@@ -7,10 +7,7 @@ import com.togezzer.restapi.message.dto.MessageDTO;
 import com.togezzer.restapi.message.dto.UploadFileDTO;
 import com.togezzer.restapi.message.enums.ContentType;
 import com.togezzer.restapi.message.messaging.MessageEventProducer;
-import io.minio.BucketExistsArgs;
-import io.minio.GetPresignedObjectUrlArgs;
-import io.minio.MakeBucketArgs;
-import io.minio.PutObjectArgs;
+import io.minio.*;
 import io.minio.http.Method;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -37,7 +34,7 @@ public class FileService {
         saveToMinio(file,roomUuid,objectName);
         String fileUrl = "/api/messages/" + roomUuid + "/files/" + objectName;
         ContentDTO contentDTO = ContentDTO.builder().value(fileUrl).type(ContentType.FILE).build();
-        MessageDTO messageDTO = messageUtils.buildMessageDTO(roomUuid, contentDTO, null, uploadFileDTO.getAuthorId(), roomUuid);
+        MessageDTO messageDTO = messageUtils.createMessageDTO(roomUuid, contentDTO, null, uploadFileDTO.getAuthorId(), roomUuid);
         messageEventProducer.publishToQueues(messageDTO);
     }
 
@@ -95,6 +92,31 @@ public class FileService {
         } catch (Exception e) {
             throw new MinioException(
                     "MinIO: failed to generate presigned URL (bucket=" + bucketName + ", object=" + objectName + "): "
+                            + e.getClass().getSimpleName() + ": " + e.getMessage()
+            );
+        }
+    }
+
+    public void deleteFile(String objectName, UUID roomUuid, UUID userUuid, UUID messageUuid){
+        messageUtils.validateEntryExists(roomUuid, userUuid);
+        MessageDTO messageDTO = messageUtils.getMessage(roomUuid, messageUuid);
+        messageUtils.isAuthorOfMessage(userUuid, messageDTO);
+        deleteFromMinio(roomUuid, objectName);
+        messageEventProducer.publishToQueues(messageUtils.applyMessageDeletion(messageDTO, messageUuid));
+    }
+
+    public void deleteFromMinio(UUID roomUuid, String objectName) {
+        String bucketName = roomUuid.toString();
+        try {
+            minioConfig.minioClient().removeObject(
+                    RemoveObjectArgs.builder()
+                            .bucket(bucketName)
+                            .object(objectName)
+                            .build()
+            );
+        } catch (Exception e) {
+            throw new MinioException(
+                    "MinIO: delete failed (bucket=" + bucketName + ", object=" + objectName + "): "
                             + e.getClass().getSimpleName() + ": " + e.getMessage()
             );
         }
