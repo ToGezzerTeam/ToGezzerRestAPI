@@ -21,6 +21,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -114,6 +115,40 @@ class FileControllerTest {
 
         mockMvc.perform(
                         get("/api/messages/{roomUuid}/file/{objectName}", roomUuid, objectName)
+                )
+                .andExpect(status().isBadRequest());
+
+        verifyNoInteractions(fileService);
+    }
+
+    @Test
+    void deleteFile_returns204_and_calls_service() throws Exception {
+        UUID roomUuid = UUID.randomUUID();
+        UUID userUuid = UUID.randomUUID();
+        UUID messageUuid = UUID.randomUUID();
+        String objectName = "file.txt";
+
+        mockMvc.perform(
+                        delete("/api/messages/{roomUuid}/file/{objectName}", roomUuid, objectName)
+                                .param("userUuid", userUuid.toString())
+                                .param("messageUuid", messageUuid.toString())
+                                .accept(MediaType.APPLICATION_JSON)
+                )
+                .andExpect(status().isNoContent());
+
+        verify(fileService).deleteFile(objectName, roomUuid, userUuid, messageUuid);
+    }
+
+    @Test
+    void deleteFile_when_missing_messageUuid_returns400_and_does_not_call_service() throws Exception {
+        UUID roomUuid = UUID.randomUUID();
+        UUID userUuid = UUID.randomUUID();
+        String objectName = "file.txt";
+
+        mockMvc.perform(
+                        delete("/api/messages/{roomUuid}/file/{objectName}", roomUuid, objectName)
+                                .param("userUuid", userUuid.toString())
+                                .accept(MediaType.APPLICATION_JSON)
                 )
                 .andExpect(status().isBadRequest());
 
