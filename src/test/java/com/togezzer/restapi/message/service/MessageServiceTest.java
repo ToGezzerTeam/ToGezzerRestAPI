@@ -56,7 +56,15 @@ class MessageServiceTest {
                 .build();
 
         doNothing().when(messageUtils).validateEntryExists(roomUuid, userUuid);
-        when(messageApiClientService.getMessageByRoomUuidAndMessageUuid(roomUuid, messageUuid)).thenReturn(remote);
+        doReturn(remote).when(messageUtils).getMessage(roomUuid, messageUuid);
+        doNothing().when(messageUtils).isAuthorOfMessage(userUuid, remote);
+        doAnswer(inv -> {
+            MessageDTO dto = inv.getArgument(0);
+            dto.getContent().setValue(inv.getArgument(1));
+            dto.setState(MessageState.UPDATED);
+            dto.setUpdatedAt(Instant.now());
+            return dto;
+        }).when(messageUtils).applyMessageUpdate(remote, "new");
 
         Instant before = Instant.now();
         messageService.updateMessage(roomUuid, messageUuid, update);
@@ -100,7 +108,15 @@ class MessageServiceTest {
                 .build();
 
         doNothing().when(messageUtils).validateEntryExists(roomUuid, userUuid);
-        when(messageApiClientService.getMessageByRoomUuidAndMessageUuid(roomUuid, messageUuid)).thenReturn(remote);
+        doReturn(remote).when(messageUtils).getMessage(roomUuid, messageUuid);
+        doNothing().when(messageUtils).isAuthorOfMessage(userUuid, remote);
+        doAnswer(inv -> {
+            MessageDTO dto = inv.getArgument(0);
+            dto.setState(MessageState.DELETED);
+            dto.setDeletedBy(((UUID) inv.getArgument(1)).toString());
+            dto.setDeletedAt(Instant.now());
+            return dto;
+        }).when(messageUtils).applyMessageDeletion(remote, userUuid);
 
         Instant before = Instant.now();
         messageService.deleteMessage(roomUuid, messageUuid, delete);
@@ -157,7 +173,8 @@ class MessageServiceTest {
 
         doNothing().when(messageUtils).validateEntryExists(roomUuid,userUuid);
 
-        when(messageApiClientService.getMessageByRoomUuidAndMessageUuid(roomUuid, messageUuid)).thenReturn(remote);
+        doReturn(remote).when(messageUtils).getMessage(roomUuid, messageUuid);
+        doThrow(MessageNotOwnedByUserException.class).when(messageUtils).isAuthorOfMessage(userUuid,remote);
 
         assertThrows(MessageNotOwnedByUserException.class, () -> messageService.deleteMessage(roomUuid, messageUuid, delete));
 
@@ -175,7 +192,7 @@ class MessageServiceTest {
         create.setAnswerTo(null);
 
         doNothing().when(messageUtils).validateEntryExists(roomUuid,userUuid);
-        doReturn(new MessageDTO()).when(messageUtils).buildMessageDTO(eq(roomUuid),any(ContentDTO.class),eq(create.getAnswerTo()),eq(create.getUserUuid()),any(UUID.class));
+        doReturn(new MessageDTO()).when(messageUtils).createMessageDTO(eq(roomUuid),any(ContentDTO.class),eq(create.getAnswerTo()),eq(create.getUserUuid()),any(UUID.class));
 
         messageService.createMessage(roomUuid, create);
 
