@@ -1,6 +1,12 @@
 package com.togezzer.restapi.errorhandler;
 
-import com.togezzer.restapi.exception.*;
+import com.togezzer.restapi.exception.AlreadyInRoomException;
+import com.togezzer.restapi.exception.AlreadyInServerException;
+import com.togezzer.restapi.exception.NotFoundException;
+import com.togezzer.restapi.exception.UserNotInRoomException;
+import com.togezzer.restapi.exception.RemoteApiClientException;
+import com.togezzer.restapi.exception.RemoteApiServerException;
+import com.togezzer.restapi.exception.MessageNotOwnedByUserException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;

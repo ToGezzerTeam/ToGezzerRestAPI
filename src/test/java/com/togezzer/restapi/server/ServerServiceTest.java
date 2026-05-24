@@ -1,6 +1,6 @@
 package com.togezzer.restapi.server;
 
-import com.togezzer.restapi.exception.ServerNotFoundException;
+import com.togezzer.restapi.exception.*;
 import com.togezzer.restapi.server.dto.JoinServerDTO;
 import com.togezzer.restapi.server.dto.ServerDTO;
 import com.togezzer.restapi.server_users.ServerUserEntity;
@@ -9,6 +9,7 @@ import com.togezzer.restapi.user.UserEntity;
 import com.togezzer.restapi.user.UserRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -18,7 +19,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
@@ -40,30 +41,8 @@ public class ServerServiceTest {
     @Test
     void shouldCreateServerSuccessfully(){
 
-        final UUID generatedUuid = UUID.randomUUID();
-        final Instant now = Instant.now();
-
-        final var serverDTO = ServerDTO.builder()
-                .id(1L)
-                .uuid(generatedUuid)
-                .createdAt(now)
-                .createdBy("user")
-                .name("server")
-                .isPublic(true)
-                .logo("logo")
-                .background("blue")
-                .build();
-
-        final var serverEntity = ServerEntity.builder()
-                .id(1L)
-                .uuid(generatedUuid)
-                .createdAt(now)
-                .createdBy("user")
-                .name("server")
-                .isPublic(true)
-                .logo("logo")
-                .background("blue")
-                .build();
+        final var serverDTO = createServerDTO();
+        final var serverEntity = createServerEntity();
 
         doReturn(serverEntity).when(this.serverRepository).save(any(ServerEntity.class));
 
@@ -83,23 +62,11 @@ public class ServerServiceTest {
     @Test
     void shouldFindServerByUuid(){
 
-        final UUID generatedUuid = UUID.randomUUID();
-        final Instant now = Instant.now();
+        final var serverEntity = createServerEntity();
 
-        final var serverEntity = ServerEntity.builder()
-                .id(1L)
-                .uuid(generatedUuid)
-                .createdAt(now)
-                .createdBy("user")
-                .name("server")
-                .isPublic(true)
-                .logo("logo")
-                .background("blue")
-                .build();
+        doReturn(Optional.of(serverEntity)).when(serverRepository).findByUuid(serverEntity.getUuid());
 
-        doReturn(Optional.of(serverEntity)).when(serverRepository).findByUuid(generatedUuid);
-
-        ServerDTO serverDTO = serverService.getServer(generatedUuid);
+        ServerDTO serverDTO = serverService.getServer(serverEntity.getUuid());
         assertThat(serverDTO).isNotNull();
         assertThat(serverDTO.getId()).isEqualTo(1L);
         assertThat(serverDTO.getCreatedBy()).isEqualTo("user");
@@ -110,22 +77,28 @@ public class ServerServiceTest {
     }
 
     @Test
+    void whenIdServerIsPresentShouldIgnoreId() {
+
+        final var serverDTO = createServerDTO();
+        doReturn(this.createServerEntity())
+                .when(this.serverRepository)
+                .save(any(ServerEntity.class));
+
+        // Act
+        serverService.createServer(serverDTO);
+
+        // Assert
+        final var argumentCaptor = ArgumentCaptor.forClass(ServerEntity.class);
+        verify(this.serverRepository).save(argumentCaptor.capture());
+
+        assertNull(argumentCaptor.getValue().getId());
+    }
+
+    @Test
     void shouldThrowExceptionIfServerNotFound(){
-        final UUID generatedUuid = UUID.randomUUID();
         final UUID uuidToFind = UUID.randomUUID();
-        final Instant now = Instant.now();
 
-        final var serverEntity = ServerEntity.builder()
-                .id(1L)
-                .uuid(generatedUuid)
-                .createdAt(now)
-                .createdBy("user")
-                .name("server")
-                .isPublic(true)
-                .logo("logo")
-                .background("blue")
-                .build();
-
+        when(this.serverRepository.findByUuid(uuidToFind)).thenReturn(Optional.empty());
         assertThrows(ServerNotFoundException.class, () -> this.serverService.getServerByUuid(uuidToFind));
     }
 
@@ -143,5 +116,67 @@ public class ServerServiceTest {
         this.serverService.join(joinServerDTO, serverUuid);
 
         verify(this.serverUserRepository).save(any(ServerUserEntity.class));
+    }
+
+    @Test
+    void whenServerIdDoesNotExistShouldThrowServerNotFoundException() {
+        final var joinServerDTO = new JoinServerDTO(UUID.randomUUID(), UUID.randomUUID());
+        final var serverUuid = UUID.randomUUID();
+
+        when(this.serverRepository.findByUuid(serverUuid)).thenReturn(Optional.empty());
+
+        assertThrows(ServerNotFoundException.class, () -> this.serverService.join(joinServerDTO, serverUuid));
+    }
+
+    @Test
+    void whenUserIdDoesNotExistShouldThrowUserNotFoundExceptionwhen_user_id_does_not_exist_should_throw_UserNotFoundException() {
+        final var joinServerDTO = new JoinServerDTO(UUID.randomUUID(), UUID.randomUUID());
+        final var serverUuid = UUID.randomUUID();
+
+        when(this.serverRepository.findByUuid(serverUuid)).thenReturn(Optional.of(new ServerEntity()));
+        when(this.userRepository.findByUuid(joinServerDTO.getUserUuid())).thenReturn(Optional.empty());
+
+        assertThrows(UserNotFoundException.class, () -> this.serverService.join(joinServerDTO, serverUuid));
+    }
+
+    @Test
+    void whenUserAlreadyInServerShouldThrowAlreadyInServerException() {
+        final var joinServerDTO = new JoinServerDTO(UUID.randomUUID(), UUID.randomUUID());
+        final var serverUuid = UUID.randomUUID();
+        final ServerEntity serverEntity = new ServerEntity();
+        final UserEntity userEntity = new UserEntity();
+
+        when(this.serverRepository.findByUuid(serverUuid)).thenReturn(Optional.of(serverEntity));
+        when(this.userRepository.findByUuid(joinServerDTO.getUserUuid())).thenReturn(Optional.of(userEntity));
+        when(this.serverUserRepository.existsByServer_IdAndUser_Id(serverEntity.getId(), userEntity.getId())).thenReturn(true);
+
+        assertThrows(AlreadyInServerException.class, () -> this.serverService.join(joinServerDTO, serverUuid));
+    }
+
+    private ServerEntity createServerEntity() {
+        return ServerEntity.builder()
+                .id(1L)
+                .uuid(UUID.randomUUID())
+                .createdAt(Instant.now())
+                .createdBy("user")
+                .name("server")
+                .isPublic(true)
+                .logo("logo")
+                .background("blue")
+                .build();
+    }
+
+    private ServerDTO createServerDTO() {
+        return ServerDTO.builder()
+                .id(1L)
+                .uuid(UUID.randomUUID())
+                .createdAt(Instant.now())
+                .createdBy("user")
+                .name("server")
+                .isPublic(true)
+                .logo("logo")
+                .background("blue")
+                .build();
+
     }
 }

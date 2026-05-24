@@ -21,21 +21,21 @@ public class ServerDTO {
 
     private Instant createdAt;
 
-    @NotNull
-    @NotBlank
+    @NotNull(message = "creator's name can't be null")
+    @NotBlank(message = "creator's name can't be blank")
     private String createdBy;
 
-    @NotNull
-    @NotBlank
+    @NotNull(message = "server's name can't be null")
+    @NotBlank(message = "server's name can't be blank")
     private String name;
 
-    @NotNull
+    @NotNull(message = "creator name can't be null")
     @JsonProperty("public")
     private boolean isPublic;
 
-    @NotNull
+    @NotNull(message = "creator name can't be null")
     private String logo;
 
-    @NotNull
+    @NotNull(message = "creator name can't be null")
     private String background;
 }
