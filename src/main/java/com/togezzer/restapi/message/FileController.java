@@ -3,10 +3,12 @@ package com.togezzer.restapi.message;
 import com.togezzer.restapi.message.dto.UploadFileDTO;
 import com.togezzer.restapi.message.service.FileService;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -16,7 +18,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping(path = "/api/messages/{roomUuid}/file", produces = MediaType.APPLICATION_JSON_VALUE)
 
-
+@Validated
 public class FileController {
     private final FileService fileService;
 
@@ -41,8 +43,8 @@ public class FileController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteFile(@PathVariable UUID roomUuid,
                            @PathVariable String objectName,
-                           @RequestParam UUID userUuid,
-                           @RequestParam UUID messageUuid) {
+                           @RequestParam @NotNull UUID userUuid,
+                           @RequestParam @NotNull UUID messageUuid) {
         this.fileService.deleteFile(objectName, roomUuid, userUuid, messageUuid);
     }
 
