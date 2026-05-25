@@ -1,10 +1,12 @@
 package com.togezzer.restapi.message.service;
 
 import com.togezzer.restapi.exception.MessageNotOwnedByUserException;
+import com.togezzer.restapi.exception.MessagesPageNotFoundRemoteException;
 import com.togezzer.restapi.message.dto.ContentDTO;
 import com.togezzer.restapi.message.dto.CreateMessageDTO;
 import com.togezzer.restapi.message.dto.DeleteMessageDTO;
 import com.togezzer.restapi.message.dto.MessageDTO;
+import com.togezzer.restapi.message.dto.MessagesPageResponseDto;
 import com.togezzer.restapi.message.dto.UpdateMessageDTO;
 import com.togezzer.restapi.message.enums.ContentType;
 import com.togezzer.restapi.message.enums.MessageState;
@@ -19,6 +21,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -113,7 +116,7 @@ class MessageServiceTest {
         doAnswer(inv -> {
             MessageDTO dto = inv.getArgument(0);
             dto.setState(MessageState.DELETED);
-            dto.setDeletedBy(((UUID) inv.getArgument(1)).toString());
+            dto.setDeletedBy(inv.getArgument(1).toString());
             dto.setDeletedAt(Instant.now());
             return dto;
         }).when(messageUtils).applyMessageDeletion(remote, userUuid);
@@ -215,5 +218,71 @@ class MessageServiceTest {
         assertThrows(IllegalArgumentException.class, () -> messageService.createMessage(roomUuid, create));
 
         verifyNoInteractions(userRepository, roomUserRepository, messageApiClientService, messageEventProducer);
+    }
+
+    @Test
+    void getMessages_should_delegate_to_apiClient_and_return_result() {
+        UUID roomUuid = UUID.randomUUID();
+        UUID userUuid = UUID.randomUUID();
+        String messageUuid = UUID.randomUUID().toString();
+        int pageSize = 50;
+
+        MessagesPageResponseDto expected = new MessagesPageResponseDto(List.of(), false);
+
+        doNothing().when(messageUtils).validateEntryExists(roomUuid, userUuid);
+        doReturn(expected).when(messageApiClientService).getMessagesByRoomId(roomUuid, messageUuid, pageSize);
+
+        MessagesPageResponseDto result = messageService.getMessages(roomUuid, messageUuid, pageSize, userUuid);
+
+        assertEquals(expected, result);
+        verify(messageUtils).validateEntryExists(roomUuid, userUuid);
+        verify(messageApiClientService).getMessagesByRoomId(roomUuid, messageUuid, pageSize);
+    }
+
+    @Test
+    void getMessages_without_messageUuid_should_delegate_to_apiClient() {
+        UUID roomUuid = UUID.randomUUID();
+        UUID userUuid = UUID.randomUUID();
+        int pageSize = 100;
+
+        MessagesPageResponseDto expected = new MessagesPageResponseDto(List.of(), false);
+
+        doNothing().when(messageUtils).validateEntryExists(roomUuid, userUuid);
+        doReturn(expected).when(messageApiClientService).getMessagesByRoomId(roomUuid, null, pageSize);
+
+        MessagesPageResponseDto result = messageService.getMessages(roomUuid, null, pageSize, userUuid);
+
+        assertEquals(expected, result);
+        verify(messageUtils).validateEntryExists(roomUuid, userUuid);
+        verify(messageApiClientService).getMessagesByRoomId(roomUuid, null, pageSize);
+    }
+
+    @Test
+    void getMessages_when_validateEntryExists_throws_should_not_call_apiClient() {
+        UUID roomUuid = UUID.randomUUID();
+        UUID userUuid = UUID.randomUUID();
+
+        doThrow(IllegalArgumentException.class).when(messageUtils).validateEntryExists(roomUuid, userUuid);
+
+        assertThrows(IllegalArgumentException.class,
+                () -> messageService.getMessages(roomUuid, null, 100, userUuid));
+
+        verifyNoInteractions(messageApiClientService, messageEventProducer);
+    }
+
+    @Test
+    void getMessages_when_apiClient_throws_should_propagate_exception() {
+        UUID roomUuid = UUID.randomUUID();
+        UUID userUuid = UUID.randomUUID();
+
+        doNothing().when(messageUtils).validateEntryExists(roomUuid, userUuid);
+        doThrow(MessagesPageNotFoundRemoteException.class)
+                .when(messageApiClientService).getMessagesByRoomId(roomUuid, null, 100);
+
+        assertThrows(MessagesPageNotFoundRemoteException.class,
+                () -> messageService.getMessages(roomUuid, null, 100, userUuid));
+
+        verify(messageUtils).validateEntryExists(roomUuid, userUuid);
+        verifyNoInteractions(messageEventProducer);
     }
 }

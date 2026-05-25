@@ -1,9 +1,11 @@
 package com.togezzer.restapi.message.service;
 
 import com.togezzer.restapi.exception.MessageNotFoundRemoteException;
+import com.togezzer.restapi.exception.MessagesPageNotFoundRemoteException;
 import com.togezzer.restapi.exception.RemoteApiClientException;
 import com.togezzer.restapi.exception.RemoteApiServerException;
 import com.togezzer.restapi.message.dto.MessageDTO;
+import com.togezzer.restapi.message.dto.MessagesPageResponseDto;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatusCode;
@@ -39,11 +41,34 @@ public class MessageApiClientService {
                 .body(MessageDTO.class);
     }
 
-    private void handle4xxError(String uri, int status, UUID roomUuid, UUID messageUuid) {
-        if (status == 404) {
-            throw new MessageNotFoundRemoteException(messageUuid, roomUuid);
-        }
+    public MessagesPageResponseDto getMessagesByRoomId(UUID roomId, String lastMessageUuid, int pageSize) {
+        return restClient.get()
+                .uri(uriBuilder -> {
+                    uriBuilder.path("/api/messages/{roomId}");
+                    if (lastMessageUuid != null && !lastMessageUuid.isEmpty()) {
+                        uriBuilder.queryParam("messageUuid", lastMessageUuid);
+                    }
+                    uriBuilder.queryParam("pageSize", pageSize);
+                    return uriBuilder.build(roomId);
+                })
+                .accept(MediaType.APPLICATION_JSON)
+                .retrieve()
+                .onStatus(HttpStatusCode::is4xxClientError,
+                        (request, response) -> handle4xxError(request.getURI().toString(), response.getStatusCode().value(), roomId, null)
+                )
+                .onStatus(HttpStatusCode::is5xxServerError,
+                        (request, response) -> handle5xxError(request.getURI().toString(), response.getStatusCode().value())
+                )
+                .body(MessagesPageResponseDto.class);
+    }
 
+    private void handle4xxError(String uri, int status, UUID roomId, UUID messageUuid) {
+        if (status == 404) {
+            if (messageUuid != null) {
+                throw new MessageNotFoundRemoteException(messageUuid, roomId);
+            }
+            throw new MessagesPageNotFoundRemoteException(roomId);
+        }
         throw new RemoteApiClientException(status, uri);
     }
 
