@@ -100,7 +100,7 @@ public class ServerServiceTest {
         final UUID uuidToFind = UUID.randomUUID();
 
         when(this.serverRepository.findByUuid(uuidToFind)).thenReturn(Optional.empty());
-        assertThrows(ServerNotFoundException.class, () -> this.serverService.getServerByUuid(uuidToFind));
+        assertThrows(ServerNotFoundException.class, () -> this.serverService.getServer(uuidToFind));
     }
 
     @Test

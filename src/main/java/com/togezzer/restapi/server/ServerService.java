@@ -27,13 +27,13 @@ public class ServerService {
         this.serverUserRepository = serverUserRepository;
     }
 
-    public ServerEntity getServerByUuid(UUID serverId) {
-        return serverRepository.findByUuid(serverId)
-                .orElseThrow(() -> new ServerNotFoundException("Server with ID " + serverId + " does not exist"));
+    private ServerEntity getServerByUuid(UUID serverUuid) {
+        return serverRepository.findByUuid(serverUuid)
+                .orElseThrow(() -> new ServerNotFoundException("Server with UUID " + serverUuid + " does not exist"));
     }
 
-    public ServerDTO getServer(UUID serverId) {
-        return this.entityToDto(getServerByUuid(serverId));
+    public ServerDTO getServer(UUID serverUuid) {
+        return this.entityToDto(getServerByUuid(serverUuid));
     }
 
     public ServerDTO createServer(final ServerDTO serverDTO) {
