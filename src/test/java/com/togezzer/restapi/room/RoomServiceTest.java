@@ -1,5 +1,6 @@
 package com.togezzer.restapi.room;
 
+import com.togezzer.restapi.auth.service.AuthUtils;
 import com.togezzer.restapi.room.dto.RenameRoomDTO;
 import com.togezzer.restapi.exception.AlreadyInRoomException;
 import com.togezzer.restapi.exception.RoomNotFoundException;
@@ -10,6 +11,7 @@ import com.togezzer.restapi.room_users.RoomUserEntity;
 import com.togezzer.restapi.room_users.RoomUserRepository;
 import com.togezzer.restapi.user.UserEntity;
 import com.togezzer.restapi.user.UserRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -42,6 +44,16 @@ public class RoomServiceTest {
 
     @Mock
     private RoomUserRepository roomUserRepository;
+
+    @Mock
+    private AuthUtils authUtils;
+
+    private final UUID userUuid = UUID.randomUUID();
+
+    @BeforeEach
+    void setup(){
+        lenient().when(authUtils.getCurrentUserUuid()).thenReturn(userUuid);
+    }
 
     @Test
     void should_create_room_successfully() {
@@ -146,8 +158,8 @@ public class RoomServiceTest {
 
     @Test
     void when_room_id_does_not_exist_should_throw_RoomNotFoundException() {
-        final var joinRoomDto = new JoinRoomDTO(UUID.randomUUID(), UUID.randomUUID());
         final var roomUuid = UUID.randomUUID();
+        final var joinRoomDto = new JoinRoomDTO(roomUuid);
 
         when(this.roomRepository.findByUuid(roomUuid)).thenReturn(Optional.empty());
 
@@ -156,11 +168,11 @@ public class RoomServiceTest {
 
     @Test
     void when_user_id_does_not_exist_should_throw_UserNotFoundException() {
-        final var joinRoomDto = new JoinRoomDTO(UUID.randomUUID(), UUID.randomUUID());
         final var roomUuid = UUID.randomUUID();
+        final var joinRoomDto = new JoinRoomDTO(roomUuid);
 
         when(this.roomRepository.findByUuid(roomUuid)).thenReturn(Optional.of(new RoomEntity()));
-        when(this.userRepository.findByUuid(joinRoomDto.getUserUuid())).thenReturn(Optional.empty());
+        when(this.userRepository.findByUuid(userUuid)).thenReturn(Optional.empty());
 
         assertThrows(UserNotFoundException.class, () -> this.roomService.join(joinRoomDto, roomUuid));
     }
@@ -217,13 +229,13 @@ public class RoomServiceTest {
 
     @Test
     void when_user_already_in_room_should_throw_AlreadyInRoomException() {
-        final var joinRoomDto = new JoinRoomDTO(UUID.randomUUID(), UUID.randomUUID());
         final var roomUuid = UUID.randomUUID();
+        final var joinRoomDto = new JoinRoomDTO(roomUuid);
         final RoomEntity roomEntity = new RoomEntity();
         final UserEntity userEntity = new UserEntity();
 
         when(this.roomRepository.findByUuid(roomUuid)).thenReturn(Optional.of(roomEntity));
-        when(this.userRepository.findByUuid(joinRoomDto.getUserUuid())).thenReturn(Optional.of(userEntity));
+        when(this.userRepository.findByUuid(userUuid)).thenReturn(Optional.of(userEntity));
         when(this.roomUserRepository.existsByRoom_IdAndUser_Id(roomEntity.getId(), userEntity.getId())).thenReturn(true);
 
         assertThrows(AlreadyInRoomException.class, () -> this.roomService.join(joinRoomDto, roomUuid));
@@ -231,13 +243,13 @@ public class RoomServiceTest {
 
     @Test
     void should_join_room_successfully(){
-        final var joinRoomDto = new JoinRoomDTO(UUID.randomUUID(), UUID.randomUUID());
         final var roomUuid = UUID.randomUUID();
+        final var joinRoomDto = new JoinRoomDTO(roomUuid);
         final RoomEntity roomEntity = new RoomEntity();
         final UserEntity userEntity = new UserEntity();
 
         when(this.roomRepository.findByUuid(roomUuid)).thenReturn(Optional.of(roomEntity));
-        when(this.userRepository.findByUuid(joinRoomDto.getUserUuid())).thenReturn(Optional.of(userEntity));
+        when(this.userRepository.findByUuid(userUuid)).thenReturn(Optional.of(userEntity));
         when(this.roomUserRepository.existsByRoom_IdAndUser_Id(roomEntity.getId(), userEntity.getId())).thenReturn(false);
 
         this.roomService.join(joinRoomDto, roomUuid);

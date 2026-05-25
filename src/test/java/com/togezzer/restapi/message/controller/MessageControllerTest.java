@@ -1,7 +1,6 @@
 package com.togezzer.restapi.message.controller;
 
 import com.togezzer.restapi.message.dto.CreateMessageDTO;
-import com.togezzer.restapi.message.dto.DeleteMessageDTO;
 import com.togezzer.restapi.message.dto.MessagesPageResponseDto;
 import com.togezzer.restapi.message.dto.UpdateMessageDTO;
 import com.togezzer.restapi.message.service.MessageService;
@@ -57,10 +56,8 @@ class MessageControllerTest {
     void updateMessage_returns204_and_calls_service() throws Exception {
         UUID roomUuid = UUID.randomUUID();
         UUID messageUuid = UUID.randomUUID();
-        UUID userUuid = UUID.randomUUID();
 
         UpdateMessageDTO bodyDto = new UpdateMessageDTO();
-        bodyDto.setUserUuid(userUuid);
         bodyDto.setMessage("hi");
 
         String body = objectMapper.writeValueAsString(bodyDto);
@@ -97,10 +94,8 @@ class MessageControllerTest {
     @Test
     void updateMessage_when_roomUuid_invalid_returns400_and_does_not_call_service() throws Exception {
         UUID messageUuid = UUID.randomUUID();
-        UUID userUuid = UUID.randomUUID();
 
         UpdateMessageDTO bodyDto = new UpdateMessageDTO();
-        bodyDto.setUserUuid(userUuid);
         bodyDto.setMessage("hi");
 
         String body = objectMapper.writeValueAsString(bodyDto);
@@ -120,47 +115,22 @@ class MessageControllerTest {
     void deleteMessage_returns204_and_calls_service() throws Exception {
         UUID roomUuid = UUID.randomUUID();
         UUID messageUuid = UUID.randomUUID();
-        UUID userUuid = UUID.randomUUID();
-
-        DeleteMessageDTO bodyDto = new DeleteMessageDTO();
-        bodyDto.setUserUuid(userUuid);
-
-        String body = objectMapper.writeValueAsString(bodyDto);
 
         mockMvc.perform(
                         delete("/api/messages/{roomUuid}/{messageUuid}", roomUuid, messageUuid)
                                 .header("Authorization", authHeader())
                                 .contentType(MediaType.APPLICATION_JSON)
-                                .content(body)
                 )
                 .andExpect(status().isNoContent());
 
-        verify(messageService).deleteMessage(eq(roomUuid), eq(messageUuid), any(DeleteMessageDTO.class));
-    }
-
-    @Test
-    void deleteMessage_when_missing_body_returns400_and_does_not_call_service() throws Exception {
-        UUID roomUuid = UUID.randomUUID();
-        UUID messageUuid = UUID.randomUUID();
-
-        mockMvc.perform(
-                        delete("/api/messages/{roomUuid}/{messageUuid}", roomUuid, messageUuid)
-                                .header("Authorization", authHeader())
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content("{}")
-                )
-                .andExpect(status().isBadRequest());
-
-        verifyNoInteractions(messageService);
+        verify(messageService).deleteMessage(eq(roomUuid), eq(messageUuid));
     }
 
     @Test
     void createMessage_returns204_and_calls_service() throws Exception {
         UUID roomUuid = UUID.randomUUID();
-        UUID userUuid = UUID.randomUUID();
 
         CreateMessageDTO bodyDto = new CreateMessageDTO();
-        bodyDto.setUserUuid(userUuid);
         bodyDto.setMessage("hi");
 
         String body = objectMapper.writeValueAsString(bodyDto);
@@ -174,23 +144,6 @@ class MessageControllerTest {
                 .andExpect(status().isNoContent());
 
         verify(messageService).createMessage(eq(roomUuid), any(CreateMessageDTO.class));
-    }
-
-    @Test
-    void createMessage_when_missing_userUuid_returns400_and_does_not_call_service() throws Exception {
-        UUID roomUuid = UUID.randomUUID();
-
-        String body = "{\"message\":\"hi\"}";
-
-        mockMvc.perform(
-                        post("/api/messages/{roomUuid}", roomUuid)
-                                .header("Authorization", authHeader())
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(body)
-                )
-                .andExpect(status().isBadRequest());
-
-        verifyNoInteractions(messageService);
     }
 
     @Test
@@ -213,10 +166,7 @@ class MessageControllerTest {
 
     @Test
     void createMessage_when_roomUuid_invalid_returns400_and_does_not_call_service() throws Exception {
-        UUID userUuid = UUID.randomUUID();
-
         CreateMessageDTO bodyDto = new CreateMessageDTO();
-        bodyDto.setUserUuid(userUuid);
         bodyDto.setMessage("hi");
 
         String body = objectMapper.writeValueAsString(bodyDto);

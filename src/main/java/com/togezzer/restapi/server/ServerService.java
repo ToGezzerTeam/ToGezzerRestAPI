@@ -1,5 +1,6 @@
 package com.togezzer.restapi.server;
 
+import com.togezzer.restapi.auth.service.AuthUtils;
 import com.togezzer.restapi.exception.AlreadyInServerException;
 import com.togezzer.restapi.exception.ServerNotFoundException;
 import com.togezzer.restapi.exception.UserNotFoundException;
@@ -20,11 +21,13 @@ public class ServerService {
     private final ServerRepository serverRepository;
     private final UserRepository userRepository;
     private final ServerUserRepository serverUserRepository;
+    private final AuthUtils authUtils;
 
-    public ServerService(ServerRepository serverRepository, UserRepository userRepository, ServerUserRepository serverUserRepository){
+    public ServerService(ServerRepository serverRepository, UserRepository userRepository, ServerUserRepository serverUserRepository, AuthUtils authUtils){
         this.serverRepository = serverRepository;
         this.userRepository = userRepository;
         this.serverUserRepository = serverUserRepository;
+        this.authUtils = authUtils;
     }
 
     private ServerEntity getServerByUuid(UUID serverUuid) {
@@ -75,12 +78,13 @@ public class ServerService {
 
     public void join(final JoinServerDTO joinServerDTO, UUID serverUuid) {
         final var serverEntity = getServerByUuid(serverUuid);
+        final UUID userUuid = authUtils.getCurrentUserUuid();
 
-        final var userEntity = this.userRepository.findByUuid(joinServerDTO.getUserUuid())
-                .orElseThrow(() -> new UserNotFoundException("User with ID " + joinServerDTO.getUserUuid() + " does not exist"));
+        final var userEntity = this.userRepository.findByUuid(userUuid)
+                .orElseThrow(() -> new UserNotFoundException("User with ID " + userUuid + " does not exist"));
 
         if (this.serverUserRepository.existsByServer_IdAndUser_Id(serverEntity.getId(), userEntity.getId())) {
-            throw new AlreadyInServerException("User with ID " + joinServerDTO.getUserUuid() + " is already in the server with ID " + joinServerDTO.getServerUuid());
+            throw new AlreadyInServerException("User with ID " + userUuid + " is already in the server with ID " + joinServerDTO.getServerUuid());
         }
 
         final var serverUserId = new ServerUserId(serverEntity.getId(), userEntity.getId());

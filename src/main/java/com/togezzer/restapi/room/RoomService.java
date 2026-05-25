@@ -1,5 +1,6 @@
 package com.togezzer.restapi.room;
 
+import com.togezzer.restapi.auth.service.AuthUtils;
 import com.togezzer.restapi.room.dto.RenameRoomDTO;
 import com.togezzer.restapi.room.dto.RoomDTO;
 import com.togezzer.restapi.exception.AlreadyInRoomException;
@@ -20,11 +21,13 @@ public class RoomService {
     private final RoomRepository roomRepository;
     private final UserRepository userRepository;
     private final RoomUserRepository roomUserRepository;
+    private final AuthUtils authUtils;
 
-    public RoomService(RoomRepository roomRepository, UserRepository userRepository, RoomUserRepository roomUserRepository) {
+    public RoomService(RoomRepository roomRepository, UserRepository userRepository, RoomUserRepository roomUserRepository, AuthUtils authUtils) {
         this.roomRepository = roomRepository;
         this.userRepository = userRepository;
         this.roomUserRepository = roomUserRepository;
+        this.authUtils = authUtils;
     }
 
     public RoomDTO create(final RoomDTO roomDTO) {
@@ -70,12 +73,13 @@ public class RoomService {
 
     public void join(final JoinRoomDTO joinRoomDTO, final UUID roomUuid) {
         final var roomEntity = getRoomEntityByUUID(roomUuid);
+        final UUID userUuid = authUtils.getCurrentUserUuid();
 
-        final var userEntity = this.userRepository.findByUuid(joinRoomDTO.getUserUuid())
-                .orElseThrow(() -> new UserNotFoundException("User with ID " + joinRoomDTO.getUserUuid() + " does not exist"));
+        final var userEntity = this.userRepository.findByUuid(userUuid)
+                .orElseThrow(() -> new UserNotFoundException("User with ID " + userUuid + " does not exist"));
 
         if (this.roomUserRepository.existsByRoom_IdAndUser_Id(roomEntity.getId(), userEntity.getId())) {
-            throw new AlreadyInRoomException("User with ID " + joinRoomDTO.getUserUuid() + " is already in the room with ID " + joinRoomDTO.getRoomUuid());
+            throw new AlreadyInRoomException("User with ID " + userUuid + " is already in the room with ID " + joinRoomDTO.getRoomUuid());
         }
 
         final var roomUserId = new RoomUserId(roomEntity.getId(), userEntity.getId());
