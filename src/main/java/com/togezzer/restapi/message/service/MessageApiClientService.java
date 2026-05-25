@@ -41,12 +41,12 @@ public class MessageApiClientService {
                 .body(MessageDTO.class);
     }
 
-    public MessagesPageResponseDto getMessagesByRoomId(UUID roomId, String messageUuid, int pageSize) {
+    public MessagesPageResponseDto getMessagesByRoomId(UUID roomId, String lastMessageUuid, int pageSize) {
         return restClient.get()
                 .uri(uriBuilder -> {
                     uriBuilder.path("/api/messages/{roomId}");
-                    if (messageUuid != null && !messageUuid.isEmpty()) {
-                        uriBuilder.queryParam("messageUuid", messageUuid);
+                    if (lastMessageUuid != null && !lastMessageUuid.isEmpty()) {
+                        uriBuilder.queryParam("messageUuid", lastMessageUuid);
                     }
                     uriBuilder.queryParam("pageSize", pageSize);
                     return uriBuilder.build(roomId);

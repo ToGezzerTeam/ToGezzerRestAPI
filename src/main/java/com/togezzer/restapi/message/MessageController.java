@@ -57,9 +57,9 @@ public class MessageController {
     @ResponseStatus(HttpStatus.OK)
     public MessagesPageResponseDto getMessages(
             @PathVariable @NotNull(message = "Room's UUID is required") UUID roomUuid,
-            @RequestParam(required = false) String messageUuid,
+            @RequestParam(required = false) String lastMessageUuid,
             @RequestParam(defaultValue = "100") @Min(1) int pageSize,
             @RequestParam @NotNull (message = "User's UUID is required") UUID userUuid){
-        return this.messageService.getMessages(roomUuid, messageUuid, pageSize, userUuid);
+        return this.messageService.getMessages(roomUuid, lastMessageUuid, pageSize, userUuid);
     }
 }

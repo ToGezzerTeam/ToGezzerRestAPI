@@ -246,7 +246,7 @@ class MessageControllerTest {
                         get("/api/messages/{roomUuid}", roomUuid)
                                 .header("Authorization", authHeader())
                                 .param("userUuid", userUuid.toString())
-                                .param("messageUuid", messageUuid.toString())
+                                .param("lastMessageUuid", messageUuid.toString())
                                 .param("pageSize", "50")
                 )
                 .andExpect(status().isOk())

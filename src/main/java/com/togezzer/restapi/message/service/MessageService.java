@@ -44,9 +44,9 @@ public class MessageService {
         messageEventProducer.publishToQueues(messageDTO);
     }
 
-    public MessagesPageResponseDto getMessages(UUID roomUuid, String messageUuid, int pageSize, UUID userUuid) {
+    public MessagesPageResponseDto getMessages(UUID roomUuid, String lastMessageUuid, int pageSize, UUID userUuid) {
         messageUtils.validateEntryExists(roomUuid, userUuid);
-        return messageApiClientService.getMessagesByRoomId(roomUuid, messageUuid, pageSize);
+        return messageApiClientService.getMessagesByRoomId(roomUuid, lastMessageUuid, pageSize);
     }
 
 }
