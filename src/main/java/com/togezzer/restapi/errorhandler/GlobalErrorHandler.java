@@ -1,12 +1,14 @@
 package com.togezzer.restapi.errorhandler;
 
 import com.togezzer.restapi.exception.AlreadyInRoomException;
+import com.togezzer.restapi.exception.AlreadyInServerException;
 import com.togezzer.restapi.exception.MessageNotOwnedByUserException;
 import com.togezzer.restapi.exception.MinioException;
 import com.togezzer.restapi.exception.NotFoundException;
+import com.togezzer.restapi.exception.UserNotInRoomException;
 import com.togezzer.restapi.exception.RemoteApiClientException;
 import com.togezzer.restapi.exception.RemoteApiServerException;
-import com.togezzer.restapi.exception.UserNotInRoomException;
+import com.togezzer.restapi.exception.MessageNotOwnedByUserException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -21,6 +23,11 @@ public class GlobalErrorHandler {
 
     @ExceptionHandler(AlreadyInRoomException.class)
     public ResponseEntity<String> handleAlreadyInRoomException(AlreadyInRoomException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
+    }
+
+    @ExceptionHandler(AlreadyInServerException.class)
+    public ResponseEntity<String> handleAlreadyInServerException(AlreadyInServerException ex) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
     }
 
