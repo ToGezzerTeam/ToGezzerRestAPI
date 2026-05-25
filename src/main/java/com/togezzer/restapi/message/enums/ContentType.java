@@ -4,7 +4,8 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
 
 public enum ContentType {
-    TEXT;
+    TEXT,
+    FILE;
 
     @JsonValue
     public String toDbValue(){

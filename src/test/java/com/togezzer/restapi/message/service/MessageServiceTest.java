@@ -9,7 +9,6 @@ import com.togezzer.restapi.message.dto.UpdateMessageDTO;
 import com.togezzer.restapi.message.enums.ContentType;
 import com.togezzer.restapi.message.enums.MessageState;
 import com.togezzer.restapi.message.messaging.MessageEventProducer;
-import com.togezzer.restapi.room.RoomRepository;
 import com.togezzer.restapi.room_users.RoomUserRepository;
 import com.togezzer.restapi.user.UserRepository;
 import org.junit.jupiter.api.Test;
@@ -28,11 +27,11 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class MessageServiceTest {
 
-    @Mock private RoomRepository roomRepository;
     @Mock private UserRepository userRepository;
     @Mock private RoomUserRepository roomUserRepository;
     @Mock private MessageApiClientService messageApiClientService;
     @Mock private MessageEventProducer messageEventProducer;
+    @Mock private MessageUtils messageUtils;
 
     @InjectMocks private MessageService messageService;
 
@@ -56,10 +55,16 @@ class MessageServiceTest {
                 .createdAt(createdAt)
                 .build();
 
-        when(roomRepository.existsByUuid(roomUuid)).thenReturn(true);
-        when(userRepository.existsByUuid(userUuid)).thenReturn(true);
-        when(roomUserRepository.existsByRoomUuidAndUserUuid(roomUuid, userUuid)).thenReturn(true);
-        when(messageApiClientService.getMessageByRoomUuidAndMessageUuid(roomUuid, messageUuid)).thenReturn(remote);
+        doNothing().when(messageUtils).validateEntryExists(roomUuid, userUuid);
+        doReturn(remote).when(messageUtils).getMessage(roomUuid, messageUuid);
+        doNothing().when(messageUtils).isAuthorOfMessage(userUuid, remote);
+        doAnswer(inv -> {
+            MessageDTO dto = inv.getArgument(0);
+            dto.getContent().setValue(inv.getArgument(1));
+            dto.setState(MessageState.UPDATED);
+            dto.setUpdatedAt(Instant.now());
+            return dto;
+        }).when(messageUtils).applyMessageUpdate(remote, "new");
 
         Instant before = Instant.now();
         messageService.updateMessage(roomUuid, messageUuid, update);
@@ -102,10 +107,16 @@ class MessageServiceTest {
                 .createdAt(createdAt)
                 .build();
 
-        when(roomRepository.existsByUuid(roomUuid)).thenReturn(true);
-        when(userRepository.existsByUuid(userUuid)).thenReturn(true);
-        when(roomUserRepository.existsByRoomUuidAndUserUuid(roomUuid, userUuid)).thenReturn(true);
-        when(messageApiClientService.getMessageByRoomUuidAndMessageUuid(roomUuid, messageUuid)).thenReturn(remote);
+        doNothing().when(messageUtils).validateEntryExists(roomUuid, userUuid);
+        doReturn(remote).when(messageUtils).getMessage(roomUuid, messageUuid);
+        doNothing().when(messageUtils).isAuthorOfMessage(userUuid, remote);
+        doAnswer(inv -> {
+            MessageDTO dto = inv.getArgument(0);
+            dto.setState(MessageState.DELETED);
+            dto.setDeletedBy(((UUID) inv.getArgument(1)).toString());
+            dto.setDeletedAt(Instant.now());
+            return dto;
+        }).when(messageUtils).applyMessageDeletion(remote, userUuid);
 
         Instant before = Instant.now();
         messageService.deleteMessage(roomUuid, messageUuid, delete);
@@ -135,7 +146,7 @@ class MessageServiceTest {
         update.setUserUuid(userUuid);
         update.setMessage("x");
 
-        when(roomRepository.existsByUuid(roomUuid)).thenReturn(false);
+        doThrow(IllegalArgumentException.class).when(messageUtils).validateEntryExists(roomUuid,userUuid);
 
         assertThrows(IllegalArgumentException.class, () -> messageService.updateMessage(roomUuid, messageUuid, update));
 
@@ -160,10 +171,10 @@ class MessageServiceTest {
                 .createdAt(Instant.parse("2025-01-01T00:00:00Z"))
                 .build();
 
-        when(roomRepository.existsByUuid(roomUuid)).thenReturn(true);
-        when(userRepository.existsByUuid(userUuid)).thenReturn(true);
-        when(roomUserRepository.existsByRoomUuidAndUserUuid(roomUuid, userUuid)).thenReturn(true);
-        when(messageApiClientService.getMessageByRoomUuidAndMessageUuid(roomUuid, messageUuid)).thenReturn(remote);
+        doNothing().when(messageUtils).validateEntryExists(roomUuid,userUuid);
+
+        doReturn(remote).when(messageUtils).getMessage(roomUuid, messageUuid);
+        doThrow(MessageNotOwnedByUserException.class).when(messageUtils).isAuthorOfMessage(userUuid,remote);
 
         assertThrows(MessageNotOwnedByUserException.class, () -> messageService.deleteMessage(roomUuid, messageUuid, delete));
 
@@ -180,43 +191,18 @@ class MessageServiceTest {
         create.setMessage("hello");
         create.setAnswerTo(null);
 
-        when(roomRepository.existsByUuid(roomUuid)).thenReturn(true);
-        when(userRepository.existsByUuid(userUuid)).thenReturn(true);
-        when(roomUserRepository.existsByRoomUuidAndUserUuid(roomUuid, userUuid)).thenReturn(true);
+        doNothing().when(messageUtils).validateEntryExists(roomUuid,userUuid);
+        doReturn(new MessageDTO()).when(messageUtils).createMessageDTO(eq(roomUuid),any(ContentDTO.class),eq(create.getAnswerTo()),eq(create.getUserUuid()),any(UUID.class));
 
-        Instant before = Instant.now();
         messageService.createMessage(roomUuid, create);
-        Instant after = Instant.now();
 
-        ArgumentCaptor<MessageDTO> captor = ArgumentCaptor.forClass(MessageDTO.class);
-        verify(messageEventProducer).publishToQueues(captor.capture());
-
-        MessageDTO published = captor.getValue();
-        assertNotNull(published.getUuid());
-        assertDoesNotThrow(() -> UUID.fromString(published.getUuid()));
-
-        assertEquals(roomUuid.toString(), published.getRoomId());
-        assertEquals(MessageState.CREATED, published.getState());
-        assertNotNull(published.getCreatedAt());
-        assertFalse(published.getCreatedAt().isBefore(before));
-        assertFalse(published.getCreatedAt().isAfter(after));
-
-        assertNotNull(published.getContent());
-        assertEquals(ContentType.TEXT, published.getContent().getType());
-        assertEquals("hello", published.getContent().getValue());
-        assertEquals(userUuid.toString(), published.getAuthorId());
-
-        assertNull(published.getAnswerTo());
-
-        assertNull(published.getUpdatedAt());
-        assertNull(published.getDeletedAt());
-        assertNull(published.getDeletedBy());
+        verify(messageEventProducer).publishToQueues(any(MessageDTO.class));
 
         verifyNoInteractions(messageApiClientService);
     }
 
     @Test
-    void createMessage_when_room_missing_should_throw_and_not_publish() {
+    void createMessage_when_validateEntryExists_throw_exception_and_not_publish() {
         UUID roomUuid = UUID.randomUUID();
         UUID userUuid = UUID.randomUUID();
 
@@ -224,45 +210,10 @@ class MessageServiceTest {
         create.setUserUuid(userUuid);
         create.setMessage("hello");
 
-        when(roomRepository.existsByUuid(roomUuid)).thenReturn(false);
+        doThrow(IllegalArgumentException.class).when(messageUtils).validateEntryExists(roomUuid,userUuid);
 
         assertThrows(IllegalArgumentException.class, () -> messageService.createMessage(roomUuid, create));
 
         verifyNoInteractions(userRepository, roomUserRepository, messageApiClientService, messageEventProducer);
-    }
-
-    @Test
-    void createMessage_when_user_missing_should_throw_and_not_publish() {
-        UUID roomUuid = UUID.randomUUID();
-        UUID userUuid = UUID.randomUUID();
-
-        CreateMessageDTO create = new CreateMessageDTO();
-        create.setUserUuid(userUuid);
-        create.setMessage("hello");
-
-        when(roomRepository.existsByUuid(roomUuid)).thenReturn(true);
-        when(userRepository.existsByUuid(userUuid)).thenReturn(false);
-
-        assertThrows(IllegalArgumentException.class, () -> messageService.createMessage(roomUuid, create));
-
-        verifyNoInteractions(roomUserRepository, messageApiClientService, messageEventProducer);
-    }
-
-    @Test
-    void createMessage_when_user_not_in_room_should_throw_and_not_publish() {
-        UUID roomUuid = UUID.randomUUID();
-        UUID userUuid = UUID.randomUUID();
-
-        CreateMessageDTO create = new CreateMessageDTO();
-        create.setUserUuid(userUuid);
-        create.setMessage("hello");
-
-        when(roomRepository.existsByUuid(roomUuid)).thenReturn(true);
-        when(userRepository.existsByUuid(userUuid)).thenReturn(true);
-        when(roomUserRepository.existsByRoomUuidAndUserUuid(roomUuid, userUuid)).thenReturn(false);
-
-        assertThrows(IllegalArgumentException.class, () -> messageService.createMessage(roomUuid, create));
-
-        verifyNoInteractions(messageApiClientService, messageEventProducer);
     }
 }

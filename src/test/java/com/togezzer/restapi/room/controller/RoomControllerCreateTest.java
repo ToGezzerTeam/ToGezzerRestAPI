@@ -13,6 +13,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import com.togezzer.restapi.auth.TestAuthTokenFactory;
+import com.togezzer.restapi.auth.service.JwtService;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -23,6 +25,13 @@ public class RoomControllerCreateTest {
     @Autowired
     private ObjectMapper objectMapper;
 
+    @Autowired
+    private JwtService jwtService;
+
+    private String authHeader() {
+        return TestAuthTokenFactory.createBearerToken(jwtService);
+    }
+
     @Test
     void should_create_room_successfully() throws Exception {
         RoomDTO roomDTO = RoomDTO.builder()
@@ -31,6 +40,7 @@ public class RoomControllerCreateTest {
                 .build();
 
         mockMvc.perform(post("/api/rooms")
+                        .header("Authorization", authHeader())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(roomDTO)))
                 .andExpect(status().isCreated())
@@ -47,6 +57,7 @@ public class RoomControllerCreateTest {
                 .build();
 
         mockMvc.perform(post("/api/rooms")
+                        .header("Authorization", authHeader())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(invalidRoom)))
                 .andExpect(status().isBadRequest());
