@@ -1,5 +1,7 @@
 package com.togezzer.restapi.server.controller;
 
+import com.togezzer.restapi.auth.TestAuthTokenFactory;
+import com.togezzer.restapi.auth.service.JwtService;
 import com.togezzer.restapi.server.ServerEntity;
 import com.togezzer.restapi.server.ServerRepository;
 import com.togezzer.restapi.server.dto.ServerDTO;
@@ -34,7 +36,14 @@ public class ServerControllerTest {
     private MockMvc mockMvc;
 
     @Autowired
+    private JwtService jwtService;
+
+    @Autowired
     private ObjectMapper objectMapper;
+
+    private String authHeader() {
+        return TestAuthTokenFactory.createBearerToken(jwtService);
+    }
 
     @Test
     void shouldCreateServerSuccessfully() throws Exception{
@@ -67,6 +76,7 @@ public class ServerControllerTest {
         doReturn(serverEntity).when(this.serverRepository).save(any(ServerEntity.class));
 
         mockMvc.perform(post("/api/server")
+                        .header("Authorization", authHeader())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(serverDTO)))
                 .andExpect(status().isCreated())
@@ -100,7 +110,8 @@ public class ServerControllerTest {
 
         doReturn(Optional.of(serverEntity)).when(serverRepository).findByUuid(serverUuid);
 
-        mockMvc.perform(get("/api/server/{serverUuid}", serverUuid.toString()))
+        mockMvc.perform(get("/api/server/{serverUuid}", serverUuid.toString())
+                        .header("Authorization", authHeader()))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.id").isNotEmpty())
@@ -119,6 +130,7 @@ public class ServerControllerTest {
         final var request = new ServerDTO();
 
         mockMvc.perform(get("/api/server/{serverUuid}", serverUuid)
+                        .header("Authorization", authHeader())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isNotFound())

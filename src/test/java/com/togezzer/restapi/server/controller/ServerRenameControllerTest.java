@@ -2,6 +2,8 @@ package com.togezzer.restapi.server.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.togezzer.restapi.auth.TestAuthTokenFactory;
+import com.togezzer.restapi.auth.service.JwtService;
 import com.togezzer.restapi.server.dto.RenameServerDTO;
 import com.togezzer.restapi.server.dto.ServerDTO;
 import org.junit.jupiter.api.Test;
@@ -27,7 +29,14 @@ public class ServerRenameControllerTest {
     @Autowired
     private MockMvc mockMvc;
 
+    @Autowired
+    private JwtService jwtService;
+
     private final ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
+
+    private String authHeader() {
+        return TestAuthTokenFactory.createBearerToken(jwtService);
+    }
 
     @Test
     void should_rename_server_successfully() throws Exception {
@@ -35,6 +44,7 @@ public class ServerRenameControllerTest {
         final var createRequest = createServerDTO();
         
         final var createResponse = mockMvc.perform(post("/api/server")
+                        .header("Authorization", authHeader())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(createRequest)))
                 .andExpect(status().isCreated())
@@ -48,6 +58,7 @@ public class ServerRenameControllerTest {
         final var renameRequest = new RenameServerDTO("New name");
 
         mockMvc.perform(patch("/api/server/{serverUuid}/rename", createdServer.getUuid())
+                        .header("Authorization", authHeader())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(renameRequest)))
                 .andExpect(status().isOk());
@@ -59,6 +70,7 @@ public class ServerRenameControllerTest {
         final var request = new RenameServerDTO("   ");
 
         mockMvc.perform(patch("/api/server/{serverUuid}/rename", uuid)
+                        .header("Authorization", authHeader())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest());
@@ -69,6 +81,7 @@ public class ServerRenameControllerTest {
         final var uuid = UUID.randomUUID();
 
         mockMvc.perform(patch("/api/server/{serverUuid}/rename", uuid)
+                        .header("Authorization", authHeader())
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isBadRequest());
     }
@@ -79,6 +92,7 @@ public class ServerRenameControllerTest {
         final var request = new RenameServerDTO("New name");
 
         mockMvc.perform(patch("/api/server/{serverUuid}/rename", uuid)
+                        .header("Authorization", authHeader())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isNotFound())

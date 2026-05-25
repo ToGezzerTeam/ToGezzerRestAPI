@@ -1,5 +1,7 @@
 package com.togezzer.restapi.server.controller;
 
+import com.togezzer.restapi.auth.TestAuthTokenFactory;
+import com.togezzer.restapi.auth.service.JwtService;
 import com.togezzer.restapi.exception.AlreadyInServerException;
 import com.togezzer.restapi.exception.ServerNotFoundException;
 import com.togezzer.restapi.exception.UserNotFoundException;
@@ -29,10 +31,17 @@ public class ServerControllerJoinTest {
     private MockMvc mockMvc;
 
     @Autowired
+    private JwtService jwtService;
+
+    @Autowired
     private ObjectMapper objectMapper;
 
     @MockitoBean
     private ServerService serverService;
+
+    private String authHeader() {
+        return TestAuthTokenFactory.createBearerToken(jwtService);
+    }
 
     @Test
     void joinServer_returns200_andCallsServiceWithserverUuidFromPath() throws Exception {
@@ -43,6 +52,7 @@ public class ServerControllerJoinTest {
 
         this.mockMvc.perform(
                         post("/api/server/{serverUuid}/join", serverUuid)
+                                .header("Authorization", authHeader())
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(body)
                 )
@@ -62,6 +72,7 @@ public class ServerControllerJoinTest {
 
         this.mockMvc.perform(
                         post("/api/server/{serverUuid}/join", serverUuid)
+                                .header("Authorization", authHeader())
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(body)
                 )
@@ -82,6 +93,7 @@ public class ServerControllerJoinTest {
 
         this.mockMvc.perform(
                         post("/api/server/{serverUuid}/join", serverUuid)
+                                .header("Authorization", authHeader())
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(body)
                 )
@@ -102,6 +114,7 @@ public class ServerControllerJoinTest {
 
         this.mockMvc.perform(
                         post("/api/server/{serverUuid}/join", serverUuid)
+                                .header("Authorization", authHeader())
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(body)
                 )
@@ -117,6 +130,7 @@ public class ServerControllerJoinTest {
 
         this.mockMvc.perform(
                         post("/api/server/{serverUuid}/join", serverUuid)
+                                .header("Authorization", authHeader())
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(body)
                 )
@@ -132,6 +146,7 @@ public class ServerControllerJoinTest {
 
         this.mockMvc.perform(
                         post("/api/server/{serverUuid}/join", "not-a-uuid")
+                                .header("Authorization", authHeader())
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(body)
                 )
