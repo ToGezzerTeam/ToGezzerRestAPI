@@ -216,7 +216,6 @@ class MessageServiceTest {
     @Test
     void getMessages_should_delegate_to_apiClient_and_return_result() {
         UUID roomUuid = UUID.randomUUID();
-        UUID userUuid = UUID.randomUUID();
         String messageUuid = UUID.randomUUID().toString();
         int pageSize = 50;
 
