@@ -1,11 +1,11 @@
 package com.togezzer.restapi.message.service;
 
+import com.togezzer.restapi.auth.service.AuthUtils;
 import com.togezzer.restapi.config.MinioConfig;
 import com.togezzer.restapi.exception.MessageNotOwnedByUserException;
 import com.togezzer.restapi.exception.MinioException;
 import com.togezzer.restapi.message.dto.ContentDTO;
 import com.togezzer.restapi.message.dto.MessageDTO;
-import com.togezzer.restapi.message.dto.UploadFileDTO;
 import com.togezzer.restapi.message.enums.ContentType;
 import com.togezzer.restapi.message.enums.MessageState;
 import com.togezzer.restapi.message.messaging.MessageEventProducer;
@@ -46,19 +46,21 @@ class FileServiceTest {
     @Mock
     private MultipartFile multipartFile;
 
+    @Mock
+    private AuthUtils authUtils;
+
     @InjectMocks
     private FileService fileService;
 
     private UUID roomUuid;
     private UUID authorId;
-    private UploadFileDTO uploadFileDTO;
 
     @BeforeEach
     void setUp() {
         roomUuid = UUID.randomUUID();
         authorId = UUID.randomUUID();
-        uploadFileDTO = new UploadFileDTO(authorId);
         lenient().when(minioConfig.minioClient()).thenReturn(minioClient);
+        lenient().when(authUtils.getCurrentUserUuid()).thenReturn(authorId);
     }
 
     @Test
@@ -74,7 +76,7 @@ class FileServiceTest {
         when(messageUtils.createMessageDTO(any(), any(), any(), any(), any())).thenReturn(builtMessage);
 
         // When
-        fileService.uploadFile(multipartFile, uploadFileDTO, roomUuid);
+        fileService.uploadFile(multipartFile, roomUuid);
 
         // Then
         verify(messageUtils).validateEntryExists(roomUuid, authorId);
@@ -95,7 +97,7 @@ class FileServiceTest {
                 .thenReturn(mock(MessageDTO.class));
 
         // When
-        fileService.uploadFile(multipartFile, uploadFileDTO, roomUuid);
+        fileService.uploadFile(multipartFile, roomUuid);
 
         // Then
         ContentDTO captured = contentCaptor.getValue();
@@ -117,7 +119,7 @@ class FileServiceTest {
                 .thenReturn(mock(MessageDTO.class));
 
         // When
-        fileService.uploadFile(multipartFile, uploadFileDTO, roomUuid);
+        fileService.uploadFile(multipartFile, roomUuid);
 
         // Then
         verify(minioClient).makeBucket(any(MakeBucketArgs.class));
@@ -135,7 +137,7 @@ class FileServiceTest {
                 .thenReturn(mock(MessageDTO.class));
 
         // When
-        fileService.uploadFile(multipartFile, uploadFileDTO, roomUuid);
+        fileService.uploadFile(multipartFile, roomUuid);
 
         // Then
         verify(minioClient, never()).makeBucket(any(MakeBucketArgs.class));
@@ -148,7 +150,7 @@ class FileServiceTest {
                 .thenThrow(new RuntimeException("connection refused"));
 
         // When / Then
-        assertThatThrownBy(() -> fileService.uploadFile(multipartFile, uploadFileDTO, roomUuid))
+        assertThatThrownBy(() -> fileService.uploadFile(multipartFile, roomUuid))
                 .isInstanceOf(MinioException.class)
                 .hasMessageContaining("failed to check or create bucket")
                 .hasMessageContaining(roomUuid.toString());
@@ -166,7 +168,7 @@ class FileServiceTest {
                 .when(minioClient).putObject(any(PutObjectArgs.class));
 
         // When / Then
-        assertThatThrownBy(() -> fileService.uploadFile(multipartFile, uploadFileDTO, roomUuid))
+        assertThatThrownBy(() -> fileService.uploadFile(multipartFile, roomUuid))
                 .isInstanceOf(MinioException.class)
                 .hasMessageContaining("upload failed")
                 .hasMessageContaining(roomUuid.toString());
@@ -241,31 +243,30 @@ class FileServiceTest {
     @Test
     void deleteFile_shouldValidateAndDeleteFromMinioAndPublish() throws Exception {
         // Given
-        UUID userUuid = UUID.randomUUID();
         UUID messageUuid = UUID.randomUUID();
         String objectName = "abc_file.png";
 
         MessageDTO messageDTO = MessageDTO.builder()
                 .uuid(messageUuid.toString())
-                .authorId(userUuid.toString())
+                .authorId(authorId.toString())
                 .build();
 
-        doNothing().when(messageUtils).validateEntryExists(roomUuid, userUuid);
+        doNothing().when(messageUtils).validateEntryExists(roomUuid, authorId);
         doReturn(messageDTO).when(messageUtils).getMessage(roomUuid, messageUuid);
-        doNothing().when(messageUtils).isAuthorOfMessage(userUuid, messageDTO);
+        doNothing().when(messageUtils).isAuthorOfMessage(authorId, messageDTO);
         doAnswer(inv -> {
             MessageDTO dto = inv.getArgument(0);
             dto.setState(MessageState.DELETED);
-            dto.setDeletedBy(((UUID) inv.getArgument(1)).toString());
+            dto.setDeletedBy(inv.getArgument(1).toString());
             dto.setDeletedAt(Instant.now());
             return dto;
         }).when(messageUtils).applyMessageDeletion(messageDTO, messageUuid);
 
         // When
-        fileService.deleteFile(objectName, roomUuid, userUuid, messageUuid);
+        fileService.deleteFile(objectName, roomUuid, messageUuid);
 
         // Then
-        verify(messageUtils).validateEntryExists(roomUuid, userUuid);
+        verify(messageUtils).validateEntryExists(roomUuid, authorId);
         verify(minioClient).removeObject(any(RemoveObjectArgs.class));
         verify(messageEventProducer).publishToQueues(any(MessageDTO.class));
     }
@@ -273,21 +274,20 @@ class FileServiceTest {
     @Test
     void deleteFile_whenNotAuthor_shouldThrowAndNotDeleteNorPublish() {
         // Given
-        UUID userUuid = UUID.randomUUID();
         UUID messageUuid = UUID.randomUUID();
 
         MessageDTO messageDTO = MessageDTO.builder()
                 .uuid(messageUuid.toString())
-                .authorId(UUID.randomUUID().toString())
+                .authorId(authorId.toString())
                 .build();
 
-        doNothing().when(messageUtils).validateEntryExists(roomUuid, userUuid);
+        doNothing().when(messageUtils).validateEntryExists(roomUuid, authorId);
         doReturn(messageDTO).when(messageUtils).getMessage(roomUuid, messageUuid);
         doThrow(MessageNotOwnedByUserException.class)
-                .when(messageUtils).isAuthorOfMessage(userUuid, messageDTO);
+                .when(messageUtils).isAuthorOfMessage(authorId, messageDTO);
 
         // When / Then
-        assertThatThrownBy(() -> fileService.deleteFile("file.png", roomUuid, userUuid, messageUuid))
+        assertThatThrownBy(() -> fileService.deleteFile("file.png", roomUuid, messageUuid))
                 .isInstanceOf(MessageNotOwnedByUserException.class);
 
         verifyNoInteractions(minioClient);
@@ -297,14 +297,13 @@ class FileServiceTest {
     @Test
     void deleteFile_whenValidateEntryFails_shouldThrowAndNotDeleteNorPublish() {
         // Given
-        UUID userUuid = UUID.randomUUID();
         UUID messageUuid = UUID.randomUUID();
 
         doThrow(IllegalArgumentException.class)
-                .when(messageUtils).validateEntryExists(roomUuid, userUuid);
+                .when(messageUtils).validateEntryExists(roomUuid, authorId);
 
         // When / Then
-        assertThatThrownBy(() -> fileService.deleteFile("file.png", roomUuid, userUuid, messageUuid))
+        assertThatThrownBy(() -> fileService.deleteFile("file.png", roomUuid, messageUuid))
                 .isInstanceOf(IllegalArgumentException.class);
 
         verifyNoInteractions(minioClient);

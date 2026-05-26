@@ -1,10 +1,10 @@
 package com.togezzer.restapi.message.service;
 
+import com.togezzer.restapi.auth.service.AuthUtils;
 import com.togezzer.restapi.config.MinioConfig;
 import com.togezzer.restapi.exception.MinioException;
 import com.togezzer.restapi.message.dto.ContentDTO;
 import com.togezzer.restapi.message.dto.MessageDTO;
-import com.togezzer.restapi.message.dto.UploadFileDTO;
 import com.togezzer.restapi.message.enums.ContentType;
 import com.togezzer.restapi.message.messaging.MessageEventProducer;
 import io.minio.BucketExistsArgs;
@@ -26,9 +26,11 @@ public class FileService {
     private final MessageUtils messageUtils;
     private final MinioConfig minioConfig;
     private final MessageEventProducer messageEventProducer;
+    private final AuthUtils authUtils;
 
-    public void uploadFile(MultipartFile file, UploadFileDTO uploadFileDTO, UUID roomUuid){
-        messageUtils.validateEntryExists(roomUuid,uploadFileDTO.getAuthorId());
+    public void uploadFile(MultipartFile file, UUID roomUuid){
+        final UUID userUuid = authUtils.getCurrentUserUuid();
+        messageUtils.validateEntryExists(roomUuid,userUuid);
         ensureBucketExists(roomUuid.toString());
         UUID messageUuid = UUID.randomUUID();
         String sanitizedFilename = Objects.requireNonNull(file.getOriginalFilename())
@@ -38,7 +40,7 @@ public class FileService {
         saveToMinio(file,roomUuid,objectName);
         String fileUrl = "/api/messages/" + roomUuid + "/files/" + objectName;
         ContentDTO contentDTO = ContentDTO.builder().value(fileUrl).type(ContentType.FILE).build();
-        MessageDTO messageDTO = messageUtils.createMessageDTO(roomUuid, contentDTO, null, uploadFileDTO.getAuthorId(), roomUuid);
+        MessageDTO messageDTO = messageUtils.createMessageDTO(roomUuid, contentDTO, null, userUuid, roomUuid);
         messageEventProducer.publishToQueues(messageDTO);
     }
 
@@ -101,7 +103,8 @@ public class FileService {
         }
     }
 
-    public void deleteFile(String objectName, UUID roomUuid, UUID userUuid, UUID messageUuid){
+    public void deleteFile(String objectName, UUID roomUuid, UUID messageUuid){
+        final UUID userUuid = authUtils.getCurrentUserUuid();
         messageUtils.validateEntryExists(roomUuid, userUuid);
         MessageDTO messageDTO = messageUtils.getMessage(roomUuid, messageUuid);
         messageUtils.isAuthorOfMessage(userUuid, messageDTO);

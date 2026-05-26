@@ -1,10 +1,10 @@
 package com.togezzer.restapi.message.service;
 
+import com.togezzer.restapi.auth.service.AuthUtils;
 import com.togezzer.restapi.exception.MessageNotOwnedByUserException;
 import com.togezzer.restapi.exception.MessagesPageNotFoundRemoteException;
 import com.togezzer.restapi.message.dto.ContentDTO;
 import com.togezzer.restapi.message.dto.CreateMessageDTO;
-import com.togezzer.restapi.message.dto.DeleteMessageDTO;
 import com.togezzer.restapi.message.dto.MessageDTO;
 import com.togezzer.restapi.message.dto.MessagesPageResponseDto;
 import com.togezzer.restapi.message.dto.UpdateMessageDTO;
@@ -13,6 +13,7 @@ import com.togezzer.restapi.message.enums.MessageState;
 import com.togezzer.restapi.message.messaging.MessageEventProducer;
 import com.togezzer.restapi.room_users.RoomUserRepository;
 import com.togezzer.restapi.user.UserRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -35,17 +36,23 @@ class MessageServiceTest {
     @Mock private MessageApiClientService messageApiClientService;
     @Mock private MessageEventProducer messageEventProducer;
     @Mock private MessageUtils messageUtils;
+    @Mock private AuthUtils authUtils;
 
     @InjectMocks private MessageService messageService;
+
+    private final UUID userUuid = UUID.randomUUID();
+
+    @BeforeEach
+    void setup(){
+        lenient().when(authUtils.getCurrentUserUuid()).thenReturn(userUuid);
+    }
 
     @Test
     void updateMessage_should_publish_updated_message() {
         UUID roomUuid = UUID.randomUUID();
         UUID messageUuid = UUID.randomUUID();
-        UUID userUuid = UUID.randomUUID();
 
         UpdateMessageDTO update = new UpdateMessageDTO();
-        update.setUserUuid(userUuid);
         update.setMessage("new");
 
         Instant createdAt = Instant.parse("2025-01-01T00:00:00Z");
@@ -95,10 +102,6 @@ class MessageServiceTest {
     void deleteMessage_should_publish_deleted_message() {
         UUID roomUuid = UUID.randomUUID();
         UUID messageUuid = UUID.randomUUID();
-        UUID userUuid = UUID.randomUUID();
-
-        DeleteMessageDTO delete = new DeleteMessageDTO();
-        delete.setUserUuid(userUuid);
 
         Instant createdAt = Instant.parse("2025-01-01T00:00:00Z");
         MessageDTO remote = MessageDTO.builder()
@@ -122,7 +125,7 @@ class MessageServiceTest {
         }).when(messageUtils).applyMessageDeletion(remote, userUuid);
 
         Instant before = Instant.now();
-        messageService.deleteMessage(roomUuid, messageUuid, delete);
+        messageService.deleteMessage(roomUuid, messageUuid);
         Instant after = Instant.now();
 
         ArgumentCaptor<MessageDTO> captor = ArgumentCaptor.forClass(MessageDTO.class);
@@ -143,10 +146,8 @@ class MessageServiceTest {
     void updateMessage_when_room_missing_should_throw_and_not_call_remote_nor_publish() {
         UUID roomUuid = UUID.randomUUID();
         UUID messageUuid = UUID.randomUUID();
-        UUID userUuid = UUID.randomUUID();
 
         UpdateMessageDTO update = new UpdateMessageDTO();
-        update.setUserUuid(userUuid);
         update.setMessage("x");
 
         doThrow(IllegalArgumentException.class).when(messageUtils).validateEntryExists(roomUuid,userUuid);
@@ -160,10 +161,6 @@ class MessageServiceTest {
     void deleteMessage_when_not_author_should_throw_and_not_publish() {
         UUID roomUuid = UUID.randomUUID();
         UUID messageUuid = UUID.randomUUID();
-        UUID userUuid = UUID.randomUUID();
-
-        DeleteMessageDTO delete = new DeleteMessageDTO();
-        delete.setUserUuid(userUuid);
 
         MessageDTO remote = MessageDTO.builder()
                 .uuid(messageUuid.toString())
@@ -179,7 +176,7 @@ class MessageServiceTest {
         doReturn(remote).when(messageUtils).getMessage(roomUuid, messageUuid);
         doThrow(MessageNotOwnedByUserException.class).when(messageUtils).isAuthorOfMessage(userUuid,remote);
 
-        assertThrows(MessageNotOwnedByUserException.class, () -> messageService.deleteMessage(roomUuid, messageUuid, delete));
+        assertThrows(MessageNotOwnedByUserException.class, () -> messageService.deleteMessage(roomUuid, messageUuid));
 
         verify(messageEventProducer, never()).publishToQueues(any());
     }
@@ -187,15 +184,13 @@ class MessageServiceTest {
     @Test
     void createMessage_should_publish_created_message() {
         UUID roomUuid = UUID.randomUUID();
-        UUID userUuid = UUID.randomUUID();
 
         CreateMessageDTO create = new CreateMessageDTO();
-        create.setUserUuid(userUuid);
         create.setMessage("hello");
         create.setAnswerTo(null);
 
         doNothing().when(messageUtils).validateEntryExists(roomUuid,userUuid);
-        doReturn(new MessageDTO()).when(messageUtils).createMessageDTO(eq(roomUuid),any(ContentDTO.class),eq(create.getAnswerTo()),eq(create.getUserUuid()),any(UUID.class));
+        doReturn(new MessageDTO()).when(messageUtils).createMessageDTO(eq(roomUuid),any(ContentDTO.class),eq(create.getAnswerTo()),eq(userUuid),any(UUID.class));
 
         messageService.createMessage(roomUuid, create);
 
@@ -207,10 +202,8 @@ class MessageServiceTest {
     @Test
     void createMessage_when_validateEntryExists_throw_exception_and_not_publish() {
         UUID roomUuid = UUID.randomUUID();
-        UUID userUuid = UUID.randomUUID();
 
         CreateMessageDTO create = new CreateMessageDTO();
-        create.setUserUuid(userUuid);
         create.setMessage("hello");
 
         doThrow(IllegalArgumentException.class).when(messageUtils).validateEntryExists(roomUuid,userUuid);
@@ -223,7 +216,6 @@ class MessageServiceTest {
     @Test
     void getMessages_should_delegate_to_apiClient_and_return_result() {
         UUID roomUuid = UUID.randomUUID();
-        UUID userUuid = UUID.randomUUID();
         String messageUuid = UUID.randomUUID().toString();
         int pageSize = 50;
 
@@ -242,7 +234,6 @@ class MessageServiceTest {
     @Test
     void getMessages_without_messageUuid_should_delegate_to_apiClient() {
         UUID roomUuid = UUID.randomUUID();
-        UUID userUuid = UUID.randomUUID();
         int pageSize = 100;
 
         MessagesPageResponseDto expected = new MessagesPageResponseDto(List.of(), false);
@@ -260,7 +251,6 @@ class MessageServiceTest {
     @Test
     void getMessages_when_validateEntryExists_throws_should_not_call_apiClient() {
         UUID roomUuid = UUID.randomUUID();
-        UUID userUuid = UUID.randomUUID();
 
         doThrow(IllegalArgumentException.class).when(messageUtils).validateEntryExists(roomUuid, userUuid);
 
@@ -273,7 +263,6 @@ class MessageServiceTest {
     @Test
     void getMessages_when_apiClient_throws_should_propagate_exception() {
         UUID roomUuid = UUID.randomUUID();
-        UUID userUuid = UUID.randomUUID();
 
         doNothing().when(messageUtils).validateEntryExists(roomUuid, userUuid);
         doThrow(MessagesPageNotFoundRemoteException.class)

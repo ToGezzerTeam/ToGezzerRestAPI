@@ -46,9 +46,8 @@ public class ServerControllerJoinTest {
     @Test
     void joinServer_returns200_andCallsServiceWithserverUuidFromPath() throws Exception {
         final UUID serverUuid = UUID.randomUUID();
-        final UUID userUuid = UUID.randomUUID();
 
-        final String body = this.objectMapper.writeValueAsString(new JoinServerDTO(null, userUuid));
+        final String body = this.objectMapper.writeValueAsString(new JoinServerDTO(null));
 
         this.mockMvc.perform(
                         post("/api/server/{serverUuid}/join", serverUuid)
@@ -62,13 +61,12 @@ public class ServerControllerJoinTest {
     @Test
     void joinServer_whenServerNotFound_returns404_andMessage() throws Exception {
         final UUID serverUuid = UUID.randomUUID();
-        final UUID userUuid = UUID.randomUUID();
 
         doThrow(new ServerNotFoundException("serveur introuvable"))
                 .when(this.serverService)
                 .join(org.mockito.ArgumentMatchers.any(JoinServerDTO.class), org.mockito.ArgumentMatchers.eq(serverUuid));
 
-        final String body = this.objectMapper.writeValueAsString(new JoinServerDTO(null, userUuid));
+        final String body = this.objectMapper.writeValueAsString(new JoinServerDTO(null));
 
         this.mockMvc.perform(
                         post("/api/server/{serverUuid}/join", serverUuid)
@@ -83,13 +81,12 @@ public class ServerControllerJoinTest {
     @Test
     void joinServer_whenUserNotFound_returns404_andMessage() throws Exception {
         final UUID serverUuid = UUID.randomUUID();
-        final UUID userUuid = UUID.randomUUID();
 
         doThrow(new UserNotFoundException("user introuvable"))
                 .when(this.serverService)
                 .join(org.mockito.ArgumentMatchers.any(JoinServerDTO.class), org.mockito.ArgumentMatchers.eq(serverUuid));
 
-        final String body = this.objectMapper.writeValueAsString(new JoinServerDTO(null, userUuid));
+        final String body = this.objectMapper.writeValueAsString(new JoinServerDTO(null));
 
         this.mockMvc.perform(
                         post("/api/server/{serverUuid}/join", serverUuid)
@@ -104,13 +101,12 @@ public class ServerControllerJoinTest {
     @Test
     void joinServer_whenAlreadyInserver_returns400_andMessage() throws Exception {
         final UUID serverUuid = UUID.randomUUID();
-        final UUID userUuid = UUID.randomUUID();
 
         doThrow(new AlreadyInServerException("déjà dans le serveur"))
                 .when(this.serverService)
                 .join(org.mockito.ArgumentMatchers.any(JoinServerDTO.class), org.mockito.ArgumentMatchers.eq(serverUuid));
 
-        final String body = this.objectMapper.writeValueAsString(new JoinServerDTO(null, userUuid));
+        final String body = this.objectMapper.writeValueAsString(new JoinServerDTO(null));
 
         this.mockMvc.perform(
                         post("/api/server/{serverUuid}/join", serverUuid)
@@ -123,26 +119,8 @@ public class ServerControllerJoinTest {
     }
 
     @Test
-    void joinServer_whenBodyMissingUserUuid_returns400_andDoesNotCallService() throws Exception {
-        final UUID serverUuid = UUID.randomUUID();
-
-        final String body = "{}";
-
-        this.mockMvc.perform(
-                        post("/api/server/{serverUuid}/join", serverUuid)
-                                .header("Authorization", authHeader())
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(body)
-                )
-                .andExpect(status().isBadRequest());
-
-        verifyNoInteractions(this.serverService);
-    }
-
-    @Test
     void joinServer_whenserverUuidPathInvalid_returns400_andDoesNotCallService() throws Exception {
-        final UUID userUuid = UUID.randomUUID();
-        final String body = this.objectMapper.writeValueAsString(new JoinServerDTO(null, userUuid));
+        final String body = this.objectMapper.writeValueAsString(new JoinServerDTO(null));
 
         this.mockMvc.perform(
                         post("/api/server/{serverUuid}/join", "not-a-uuid")

@@ -6,7 +6,7 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public abstract class BaseMessageWithContentDTO extends MessagePostDTO {
+public abstract class BaseMessageWithContentDTO {
 
     @NotBlank(message = "message is required")
     private String message;

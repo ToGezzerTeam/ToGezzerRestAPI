@@ -1,8 +1,6 @@
 package com.togezzer.restapi.message;
 
-import com.togezzer.restapi.message.dto.UploadFileDTO;
 import com.togezzer.restapi.message.service.FileService;
-import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -25,9 +23,8 @@ public class FileController {
     @PostMapping
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void uploadFile(@PathVariable UUID roomUuid,
-                           @RequestPart("data") @Valid UploadFileDTO uploadFileDTO,
                            @RequestPart("file") MultipartFile file){
-        this.fileService.uploadFile(file, uploadFileDTO, roomUuid);
+        this.fileService.uploadFile(file, roomUuid);
     }
 
     @GetMapping("/{objectName}")
@@ -43,9 +40,8 @@ public class FileController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteFile(@PathVariable UUID roomUuid,
                            @PathVariable String objectName,
-                           @RequestParam @NotNull UUID userUuid,
                            @RequestParam @NotNull UUID messageUuid) {
-        this.fileService.deleteFile(objectName, roomUuid, userUuid, messageUuid);
+        this.fileService.deleteFile(objectName, roomUuid, messageUuid);
     }
 
 }

@@ -1,7 +1,6 @@
 package com.togezzer.restapi.message;
 
 import com.togezzer.restapi.message.dto.CreateMessageDTO;
-import com.togezzer.restapi.message.dto.DeleteMessageDTO;
 import com.togezzer.restapi.message.dto.MessagesPageResponseDto;
 import com.togezzer.restapi.message.dto.UpdateMessageDTO;
 import com.togezzer.restapi.message.service.MessageService;
@@ -48,9 +47,8 @@ public class MessageController {
     @DeleteMapping("{roomUuid}/{messageUuid}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteMessage(@PathVariable @NotNull(message = "Room's UUID is required") UUID roomUuid,
-                              @PathVariable @NotNull(message = "Message's UUID is required") UUID messageUuid,
-                              @Valid @RequestBody DeleteMessageDTO deleteMessageDTO) {
-        this.messageService.deleteMessage(roomUuid, messageUuid, deleteMessageDTO);
+                              @PathVariable @NotNull(message = "Message's UUID is required") UUID messageUuid) {
+        this.messageService.deleteMessage(roomUuid, messageUuid);
     }
 
     @GetMapping("{roomUuid}")

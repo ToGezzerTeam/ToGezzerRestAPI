@@ -46,9 +46,8 @@ public class RoomControllerJoinTest {
     @Test
     void joinRoom_returns200_andCallsServiceWithRoomUuidFromPath() throws Exception {
         final UUID roomUuid = UUID.randomUUID();
-        final UUID userUuid = UUID.randomUUID();
 
-        final String body = this.objectMapper.writeValueAsString(new JoinRoomDTO(null, userUuid));
+        final String body = this.objectMapper.writeValueAsString(new JoinRoomDTO(null));
 
         this.mockMvc.perform(
                         post("/api/rooms/{roomUuid}/join", roomUuid)
@@ -62,13 +61,12 @@ public class RoomControllerJoinTest {
     @Test
     void joinRoom_whenRoomNotFound_returns404_andMessage() throws Exception {
         final UUID roomUuid = UUID.randomUUID();
-        final UUID userUuid = UUID.randomUUID();
 
         doThrow(new RoomNotFoundException("room introuvable"))
                 .when(this.roomService)
                 .join(org.mockito.ArgumentMatchers.any(JoinRoomDTO.class), org.mockito.ArgumentMatchers.eq(roomUuid));
 
-        final String body = this.objectMapper.writeValueAsString(new JoinRoomDTO(null, userUuid));
+        final String body = this.objectMapper.writeValueAsString(new JoinRoomDTO(null));
 
         this.mockMvc.perform(
                         post("/api/rooms/{roomUuid}/join", roomUuid)
@@ -83,13 +81,12 @@ public class RoomControllerJoinTest {
     @Test
     void joinRoom_whenUserNotFound_returns404_andMessage() throws Exception {
         final UUID roomUuid = UUID.randomUUID();
-        final UUID userUuid = UUID.randomUUID();
 
         doThrow(new UserNotFoundException("user introuvable"))
                 .when(this.roomService)
                 .join(org.mockito.ArgumentMatchers.any(JoinRoomDTO.class), org.mockito.ArgumentMatchers.eq(roomUuid));
 
-        final String body = this.objectMapper.writeValueAsString(new JoinRoomDTO(null, userUuid));
+        final String body = this.objectMapper.writeValueAsString(new JoinRoomDTO(null));
 
         this.mockMvc.perform(
                         post("/api/rooms/{roomUuid}/join", roomUuid)
@@ -104,13 +101,12 @@ public class RoomControllerJoinTest {
     @Test
     void joinRoom_whenAlreadyInRoom_returns400_andMessage() throws Exception {
         final UUID roomUuid = UUID.randomUUID();
-        final UUID userUuid = UUID.randomUUID();
 
         doThrow(new AlreadyInRoomException("déjà dans la room"))
                 .when(this.roomService)
                 .join(org.mockito.ArgumentMatchers.any(JoinRoomDTO.class), org.mockito.ArgumentMatchers.eq(roomUuid));
 
-        final String body = this.objectMapper.writeValueAsString(new JoinRoomDTO(null, userUuid));
+        final String body = this.objectMapper.writeValueAsString(new JoinRoomDTO(null));
 
         this.mockMvc.perform(
                         post("/api/rooms/{roomUuid}/join", roomUuid)
@@ -123,26 +119,8 @@ public class RoomControllerJoinTest {
     }
 
     @Test
-    void joinRoom_whenBodyMissingUserUuid_returns400_andDoesNotCallService() throws Exception {
-        final UUID roomUuid = UUID.randomUUID();
-
-        final String body = "{}";
-
-        this.mockMvc.perform(
-                        post("/api/rooms/{roomUuid}/join", roomUuid)
-                                .header("Authorization", authHeader())
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(body)
-                )
-                .andExpect(status().isBadRequest());
-
-        verifyNoInteractions(this.roomService);
-    }
-
-    @Test
     void joinRoom_whenRoomUuidPathInvalid_returns400_andDoesNotCallService() throws Exception {
-        final UUID userUuid = UUID.randomUUID();
-        final String body = this.objectMapper.writeValueAsString(new JoinRoomDTO(null, userUuid));
+        final String body = this.objectMapper.writeValueAsString(new JoinRoomDTO(null));
 
         this.mockMvc.perform(
                         post("/api/rooms/{roomUuid}/join", "not-a-uuid")
