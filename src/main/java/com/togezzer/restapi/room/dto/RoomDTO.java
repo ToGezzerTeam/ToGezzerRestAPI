@@ -28,4 +28,5 @@ public class RoomDTO {
 
     private Instant createdAt;
 
+    private Long serverId;
 }

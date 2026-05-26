@@ -1,6 +1,7 @@
 package com.togezzer.restapi.room;
 
 import com.togezzer.restapi.auth.service.AuthUtils;
+import com.togezzer.restapi.exception.ServerNotFoundException;
 import com.togezzer.restapi.room.dto.RenameRoomDTO;
 import com.togezzer.restapi.exception.AlreadyInRoomException;
 import com.togezzer.restapi.exception.RoomNotFoundException;
@@ -9,14 +10,18 @@ import com.togezzer.restapi.room.dto.JoinRoomDTO;
 import com.togezzer.restapi.room.dto.RoomDTO;
 import com.togezzer.restapi.room_users.RoomUserEntity;
 import com.togezzer.restapi.room_users.RoomUserRepository;
+import com.togezzer.restapi.server.ServerEntity;
+import com.togezzer.restapi.server.ServerRepository;
 import com.togezzer.restapi.user.UserEntity;
 import com.togezzer.restapi.user.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mapstruct.factory.Mappers;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.Instant;
@@ -47,6 +52,12 @@ public class RoomServiceTest {
 
     @Mock
     private AuthUtils authUtils;
+
+    @Mock
+    private ServerRepository serverRepository;
+
+    @Spy
+    private RoomMapper roomMapper = Mappers.getMapper(RoomMapper.class);
 
     private final UUID userUuid = UUID.randomUUID();
 
@@ -178,6 +189,54 @@ public class RoomServiceTest {
     }
 
     @Test
+    void when_server_id_is_provided_should_link_server_to_room() {
+        // Arrange
+        final var serverId = 42L;
+        final var serverEntity = ServerEntity.builder().id(serverId).build();
+
+        final var roomDto = RoomDTO.builder()
+                .name("Test room")
+                .channelType(ChannelType.TEXT)
+                .serverId(serverId)
+                .build();
+
+        final var roomEntity = createRoomEntity(UUID.randomUUID(), "Test room");
+        roomEntity.setServer(serverEntity);
+
+        doReturn(Optional.of(serverEntity)).when(this.serverRepository).findById(serverId);
+        doReturn(roomEntity).when(this.roomRepository).save(any(RoomEntity.class));
+
+        // Act
+        final var created = roomService.create(roomDto);
+
+        // Assert
+        final var argumentCaptor = ArgumentCaptor.forClass(RoomEntity.class);
+        verify(this.roomRepository).save(argumentCaptor.capture());
+
+        assertNotNull(argumentCaptor.getValue().getServer());
+        assertEquals(serverId, argumentCaptor.getValue().getServer().getId());
+        assertEquals(serverId, created.getServerId());
+    }
+
+    @Test
+    void when_server_id_does_not_exist_should_throw_ServerNotFoundException() {
+        // Arrange
+        final var serverId = 99L;
+
+        final var roomDto = RoomDTO.builder()
+                .name("Test room")
+                .channelType(ChannelType.TEXT)
+                .serverId(serverId)
+                .build();
+
+        doReturn(Optional.empty()).when(this.serverRepository).findById(serverId);
+
+        // Act + Assert
+        assertThrows(ServerNotFoundException.class, () -> roomService.create(roomDto));
+        verify(this.roomRepository, never()).save(any(RoomEntity.class));
+    }
+
+    @Test
     void should_rename_room_successfully() {
         // Arrange
         final var uuid = UUID.randomUUID();
@@ -264,6 +323,7 @@ public class RoomServiceTest {
                 .name(name)
                 .channelType(ChannelType.TEXT)
                 .createdAt(Instant.now())
+                .server(null)
                 .build();
     }
 }

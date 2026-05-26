@@ -1,5 +1,6 @@
 package com.togezzer.restapi.server;
 
+import com.togezzer.restapi.server.dto.DetailServerDto;
 import com.togezzer.restapi.server.dto.JoinServerDTO;
 import com.togezzer.restapi.server.dto.RenameServerDTO;
 import com.togezzer.restapi.server.dto.ServerDTO;
@@ -24,6 +25,9 @@ public class ServerController {
     public ServerDTO getServer(@PathVariable @NotNull UUID serverUuid){
         return serverService.getServer(serverUuid);
     }
+
+    @GetMapping("/{serverUuid}/detail")
+    public DetailServerDto getServerDetail(@PathVariable @NotNull UUID serverUuid){return serverService.getServerDetail(serverUuid);}
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)

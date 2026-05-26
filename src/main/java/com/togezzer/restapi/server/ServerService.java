@@ -4,31 +4,41 @@ import com.togezzer.restapi.auth.service.AuthUtils;
 import com.togezzer.restapi.exception.AlreadyInServerException;
 import com.togezzer.restapi.exception.ServerNotFoundException;
 import com.togezzer.restapi.exception.UserNotFoundException;
+import com.togezzer.restapi.room.RoomEntity;
+import com.togezzer.restapi.room.RoomMapper;
+import com.togezzer.restapi.room.RoomRepository;
+import com.togezzer.restapi.room.RoomService;
+import com.togezzer.restapi.room.dto.RoomDTO;
+import com.togezzer.restapi.server.dto.DetailServerDto;
 import com.togezzer.restapi.server.dto.JoinServerDTO;
 import com.togezzer.restapi.server.dto.RenameServerDTO;
 import com.togezzer.restapi.server.dto.ServerDTO;
 import com.togezzer.restapi.server_users.ServerUserEntity;
 import com.togezzer.restapi.server_users.ServerUserId;
 import com.togezzer.restapi.server_users.ServerUserRepository;
+import com.togezzer.restapi.user.UserDto;
+import com.togezzer.restapi.user.UserEntity;
+import com.togezzer.restapi.user.UserMapper;
 import com.togezzer.restapi.user.UserRepository;
+import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.UUID;
 
+@AllArgsConstructor
 @Service
 public class ServerService {
 
     private final ServerRepository serverRepository;
     private final UserRepository userRepository;
     private final ServerUserRepository serverUserRepository;
+    private final RoomService roomService;
+    private final RoomRepository roomRepository;
+    private final RoomMapper roomMapper;
+    private final UserMapper userMapper;
+    private final ServerMapper serverMapper;
     private final AuthUtils authUtils;
-
-    public ServerService(ServerRepository serverRepository, UserRepository userRepository, ServerUserRepository serverUserRepository, AuthUtils authUtils){
-        this.serverRepository = serverRepository;
-        this.userRepository = userRepository;
-        this.serverUserRepository = serverUserRepository;
-        this.authUtils = authUtils;
-    }
 
     private ServerEntity getServerByUuid(UUID serverUuid) {
         return serverRepository.findByUuid(serverUuid)
@@ -36,7 +46,21 @@ public class ServerService {
     }
 
     public ServerDTO getServer(UUID serverUuid) {
-        return this.entityToDto(getServerByUuid(serverUuid));
+        return this.serverMapper.toDto(getServerByUuid(serverUuid));
+    }
+
+    public DetailServerDto getServerDetail(UUID serverUuid){
+        ServerEntity serverEntity = getServerByUuid(serverUuid);
+        List<RoomEntity> roomEntities = roomRepository.findByServer_Id(serverEntity.getId());
+        List<UserEntity> userEntities = serverUserRepository.findAllByServer_Uuid(serverUuid)
+                .stream()
+                .map(ServerUserEntity::getUser)
+                .toList();
+
+        List<RoomDTO> roomDTOS = roomMapper.toDtoList(roomEntities);
+        List<UserDto> userDtos = userMapper.toDtoList(userEntities);
+
+        return new DetailServerDto(serverEntity.getId(), roomDTOS, userDtos);
     }
 
     public ServerDTO createServer(final ServerDTO serverDTO) {
@@ -52,20 +76,7 @@ public class ServerService {
                 .background(serverDTO.getBackground());
 
         final var createdServerEntity = this.serverRepository.save(serverEntityBuilder.build());
-        return this.entityToDto(createdServerEntity);
-    }
-
-    private ServerDTO entityToDto(final ServerEntity serverEntity) {
-        return ServerDTO.builder()
-                .id(serverEntity.getId())
-                .uuid(serverEntity.getUuid())
-                .name(serverEntity.getName())
-                .createdAt(serverEntity.getCreatedAt())
-                .createdBy(serverEntity.getCreatedBy())
-                .isPublic(serverEntity.isPublic())
-                .logo(serverEntity.getLogo())
-                .background(serverEntity.getBackground())
-                .build();
+        return this.serverMapper.toDto(createdServerEntity);
     }
 
     public void renameServer(UUID roomId, RenameServerDTO renameServerDTO) {
@@ -95,5 +106,6 @@ public class ServerService {
                 .build();
 
         this.serverUserRepository.save(serverUserEntity);
+        this.roomService.addUserToListRoom(userUuid, serverEntity.getId());
     }
 }

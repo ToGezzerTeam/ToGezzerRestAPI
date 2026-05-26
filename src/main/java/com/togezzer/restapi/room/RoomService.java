@@ -1,6 +1,7 @@
 package com.togezzer.restapi.room;
 
 import com.togezzer.restapi.auth.service.AuthUtils;
+import com.togezzer.restapi.exception.ServerNotFoundException;
 import com.togezzer.restapi.room.dto.RenameRoomDTO;
 import com.togezzer.restapi.room.dto.RoomDTO;
 import com.togezzer.restapi.exception.AlreadyInRoomException;
@@ -10,25 +11,25 @@ import com.togezzer.restapi.room.dto.JoinRoomDTO;
 import com.togezzer.restapi.room_users.RoomUserEntity;
 import com.togezzer.restapi.room_users.RoomUserId;
 import com.togezzer.restapi.room_users.RoomUserRepository;
+import com.togezzer.restapi.server.ServerRepository;
 import com.togezzer.restapi.user.UserRepository;
+import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
+@AllArgsConstructor
 @Service
 public class RoomService {
     private final RoomRepository roomRepository;
     private final UserRepository userRepository;
     private final RoomUserRepository roomUserRepository;
+    private final ServerRepository serverRepository;
+    private final RoomMapper roomMapper;
     private final AuthUtils authUtils;
 
-    public RoomService(RoomRepository roomRepository, UserRepository userRepository, RoomUserRepository roomUserRepository, AuthUtils authUtils) {
-        this.roomRepository = roomRepository;
-        this.userRepository = userRepository;
-        this.roomUserRepository = roomUserRepository;
-        this.authUtils = authUtils;
-    }
 
     public RoomDTO create(final RoomDTO roomDTO) {
         final var uuid = UUID.randomUUID();
@@ -44,18 +45,14 @@ public class RoomService {
             roomEntityBuilder.name(uuid.toString());
         }
 
-        final var createdRoomEntity = this.roomRepository.save(roomEntityBuilder.build());
-        return this.entityToDto(createdRoomEntity);
-    }
+        if (roomDTO.getServerId() != null) {
+            final var serverEntity = this.serverRepository.findById(roomDTO.getServerId())
+                    .orElseThrow(() -> new ServerNotFoundException("Server not found with id: " + roomDTO.getServerId()));
+            roomEntityBuilder.server(serverEntity);
+        }
 
-    private RoomDTO entityToDto(final RoomEntity roomEntity) {
-        return RoomDTO.builder()
-                .id(roomEntity.getId())
-                .uuid(roomEntity.getUuid())
-                .name(roomEntity.getName())
-                .channelType(roomEntity.getChannelType())
-                .createdAt(roomEntity.getCreatedAt())
-                .build();
+        final var createdRoomEntity = this.roomRepository.save(roomEntityBuilder.build());
+        return this.roomMapper.toDto(createdRoomEntity);
     }
 
 
@@ -91,4 +88,25 @@ public class RoomService {
 
         this.roomUserRepository.save(roomUserEntity);
     }
+
+    public void addUserToListRoom(UUID userUuid, Long serverId){
+        List<RoomEntity> roomEntities = roomRepository.findByServer_Id(serverId);
+        if(roomEntities.isEmpty()){
+          return;
+        }
+
+        final var userEntity = this.userRepository.findByUuid(userUuid)
+                .orElseThrow(() -> new UserNotFoundException("User with ID " + userUuid + " does not exist"));
+
+        final var roomUserEntities = roomEntities.stream()
+                .map(roomEntity -> RoomUserEntity.builder()
+                        .id(new RoomUserId(roomEntity.getId(), userEntity.getId()))
+                        .room(roomEntity)
+                        .user(userEntity)
+                        .build())
+                .toList();
+
+        this.roomUserRepository.saveAll(roomUserEntities);
+    }
+
 }
