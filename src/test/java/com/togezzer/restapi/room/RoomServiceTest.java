@@ -1,6 +1,7 @@
 package com.togezzer.restapi.room;
 
 import com.togezzer.restapi.auth.service.AuthUtils;
+import com.togezzer.restapi.exception.ServerNotFoundException;
 import com.togezzer.restapi.room.dto.RenameRoomDTO;
 import com.togezzer.restapi.exception.AlreadyInRoomException;
 import com.togezzer.restapi.exception.RoomNotFoundException;
@@ -8,21 +9,28 @@ import com.togezzer.restapi.exception.UserNotFoundException;
 import com.togezzer.restapi.room.dto.JoinRoomDTO;
 import com.togezzer.restapi.room.dto.RoomDTO;
 import com.togezzer.restapi.room_users.RoomUserEntity;
+import com.togezzer.restapi.room_users.RoomUserId;
 import com.togezzer.restapi.room_users.RoomUserRepository;
+import com.togezzer.restapi.server.ServerEntity;
+import com.togezzer.restapi.server.ServerRepository;
 import com.togezzer.restapi.user.UserEntity;
 import com.togezzer.restapi.user.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mapstruct.factory.Mappers;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
@@ -47,6 +55,12 @@ public class RoomServiceTest {
 
     @Mock
     private AuthUtils authUtils;
+
+    @Mock
+    private ServerRepository serverRepository;
+
+    @Spy
+    private RoomMapper roomMapper = Mappers.getMapper(RoomMapper.class);
 
     private final UUID userUuid = UUID.randomUUID();
 
@@ -178,6 +192,54 @@ public class RoomServiceTest {
     }
 
     @Test
+    void when_server_id_is_provided_should_link_server_to_room() {
+        // Arrange
+        final var serverId = 42L;
+        final var serverEntity = ServerEntity.builder().id(serverId).build();
+
+        final var roomDto = RoomDTO.builder()
+                .name("Test room")
+                .channelType(ChannelType.TEXT)
+                .serverId(serverId)
+                .build();
+
+        final var roomEntity = createRoomEntity(UUID.randomUUID(), "Test room");
+        roomEntity.setServer(serverEntity);
+
+        doReturn(Optional.of(serverEntity)).when(this.serverRepository).findById(serverId);
+        doReturn(roomEntity).when(this.roomRepository).save(any(RoomEntity.class));
+
+        // Act
+        final var created = roomService.create(roomDto);
+
+        // Assert
+        final var argumentCaptor = ArgumentCaptor.forClass(RoomEntity.class);
+        verify(this.roomRepository).save(argumentCaptor.capture());
+
+        assertNotNull(argumentCaptor.getValue().getServer());
+        assertEquals(serverId, argumentCaptor.getValue().getServer().getId());
+        assertEquals(serverId, created.getServerId());
+    }
+
+    @Test
+    void when_server_id_does_not_exist_should_throw_ServerNotFoundException() {
+        // Arrange
+        final var serverId = 99L;
+
+        final var roomDto = RoomDTO.builder()
+                .name("Test room")
+                .channelType(ChannelType.TEXT)
+                .serverId(serverId)
+                .build();
+
+        doReturn(Optional.empty()).when(this.serverRepository).findById(serverId);
+
+        // Act + Assert
+        assertThrows(ServerNotFoundException.class, () -> roomService.create(roomDto));
+        verify(this.roomRepository, never()).save(any(RoomEntity.class));
+    }
+
+    @Test
     void should_rename_room_successfully() {
         // Arrange
         final var uuid = UUID.randomUUID();
@@ -257,6 +319,78 @@ public class RoomServiceTest {
         verify(this.roomUserRepository).save(any(RoomUserEntity.class));
     }
 
+
+    @Test
+    void addUserToListRoom_when_no_rooms_should_return_and_not_touch_user_or_saveAll() {
+        // Arrange
+        final var serverId = 123L;
+        final var someUserUuid = UUID.randomUUID();
+
+        when(roomRepository.findByServer_Id(serverId)).thenReturn(List.of());
+
+        // Act
+        roomService.addUserToListRoom(someUserUuid, serverId);
+
+        // Assert
+        verify(roomRepository).findByServer_Id(serverId);
+        verifyNoInteractions(userRepository);
+        verify(roomUserRepository, never()).saveAll(any());
+    }
+
+    @Test
+    void should_add_user_to_all_rooms_of_server() {
+        // Given
+        long serverId = 123L;
+        UUID userUuid = UUID.randomUUID();
+
+        RoomEntity room1 = RoomEntity.builder().id(10L).build();
+        RoomEntity room2 = RoomEntity.builder().id(11L).build();
+        List<RoomEntity> rooms = List.of(room1, room2);
+
+        UserEntity user = UserEntity.builder().id(99L).build();
+
+        when(roomRepository.findByServer_Id(serverId)).thenReturn(rooms);
+        when(userRepository.findByUuid(userUuid)).thenReturn(Optional.of(user));
+
+        // When
+        roomService.addUserToListRoom(userUuid, serverId);
+
+        // Then
+        ArgumentCaptor<List<RoomUserEntity>> captor = ArgumentCaptor.forClass(List.class);
+        verify(roomUserRepository).saveAll(captor.capture());
+
+        List<RoomUserEntity> result = captor.getValue();
+
+        assertThat(result)
+                .hasSize(2)
+                .extracting(RoomUserEntity::getId)
+                .containsExactlyInAnyOrder(
+                        new RoomUserId(10L, 99L),
+                        new RoomUserId(11L, 99L)
+                );
+
+        assertThat(result)
+                .allSatisfy(roomUser -> {
+                    assertThat(roomUser.getUser()).isSameAs(user);
+                    assertThat(roomUser.getRoom()).isIn(rooms);
+                });
+    }
+
+    @Test
+    void addUserToListRoom_when_user_not_found_should_throw_and_not_saveAll() {
+        // Arrange
+        final var serverId = 123L;
+        final var someUserUuid = UUID.randomUUID();
+
+        final var r1 = RoomEntity.builder().id(10L).build();
+        when(roomRepository.findByServer_Id(serverId)).thenReturn(List.of(r1));
+        when(userRepository.findByUuid(someUserUuid)).thenReturn(Optional.empty());
+
+        // Act + Assert
+        assertThrows(UserNotFoundException.class, () -> roomService.addUserToListRoom(someUserUuid, serverId));
+        verify(roomUserRepository, never()).saveAll(any());
+    }
+
     private RoomEntity createRoomEntity(final UUID uuid, final String name) {
         return RoomEntity.builder()
                 .id(1L)
@@ -264,6 +398,7 @@ public class RoomServiceTest {
                 .name(name)
                 .channelType(ChannelType.TEXT)
                 .createdAt(Instant.now())
+                .server(null)
                 .build();
     }
 }
