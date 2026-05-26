@@ -1,0 +1,27 @@
+name: Deploy
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: UPPER to lower
+        run: |
+          echo "ACTOR_LOWER=$(echo '${{ github.actor }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
+          echo "REPO_LOWER=$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
+          echo "IMAGE_NAME=apirest" >> $GITHUB_ENV
+
+      - name: Login
+        run: echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u ${{ secrets.GHCR_USER }} --password-stdin
+
+      - name: Build and push apiRest
+        run: |
+          docker build -f ./Dockerfile -t ghcr.io/${{ env.REPO_LOWER }}/${{ env.IMAGE_NAME }}:latest .
+          docker push ghcr.io/${{ env.REPO_LOWER }}/${{ env.IMAGE_NAME }}:latest
