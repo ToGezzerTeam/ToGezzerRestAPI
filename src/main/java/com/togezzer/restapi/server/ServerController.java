@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.UUID;
 
 @RestController
-@RequestMapping(path = "/api/server", produces = MediaType.APPLICATION_JSON_VALUE)
+@RequestMapping(path = "/api/servers", produces = MediaType.APPLICATION_JSON_VALUE)
 public class ServerController {
     private final ServerService serverService;
 

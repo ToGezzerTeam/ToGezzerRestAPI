@@ -68,37 +68,22 @@ class FileControllerTest {
     @Test
     void getFileUrl_returns200_and_calls_service() throws Exception {
         UUID roomUuid = UUID.randomUUID();
-        UUID userUuid = UUID.randomUUID();
         String objectName = "file.txt";
 
         String expectedUrl = "http://minio/presigned-url";
 
-        org.mockito.Mockito.when(fileService.getPresignedUrl(objectName, roomUuid, userUuid)).thenReturn(expectedUrl);
+        org.mockito.Mockito.when(fileService.getPresignedUrl(objectName, roomUuid)).thenReturn(expectedUrl);
 
         mockMvc.perform(
                         get("/api/messages/{roomUuid}/files/{objectName}", roomUuid, objectName)
                                 .header("Authorization", authHeader())
-                                .param("userUuid", userUuid.toString())
                 )
                 .andExpect(status().isOk())
-                .andExpect(content().string(expectedUrl));
+                .andExpect(content().string("\"http://minio/presigned-url\""));
 
-        verify(fileService).getPresignedUrl(objectName, roomUuid, userUuid);
+        verify(fileService).getPresignedUrl(objectName, roomUuid);
     }
 
-    @Test
-    void getFileUrl_when_missing_userUuid_returns400_and_does_not_call_service() throws Exception {
-        UUID roomUuid = UUID.randomUUID();
-        String objectName = "file.txt";
-
-        mockMvc.perform(
-                        get("/api/messages/{roomUuid}/files/{objectName}", roomUuid, objectName)
-                                .header("Authorization", authHeader())
-                )
-                .andExpect(status().isBadRequest());
-
-        verifyNoInteractions(fileService);
-    }
 
     @Test
     void deleteFile_returns204_and_calls_service() throws Exception {
@@ -108,8 +93,8 @@ class FileControllerTest {
 
         mockMvc.perform(
                         delete("/api/messages/{roomUuid}/files/{objectName}", roomUuid, objectName)
-                                .header("Authorization", authHeader())
                                 .param("messageUuid", messageUuid.toString())
+                                .header("Authorization", authHeader())
                                 .accept(MediaType.APPLICATION_JSON)
                 )
                 .andExpect(status().isNoContent());
@@ -120,13 +105,11 @@ class FileControllerTest {
     @Test
     void deleteFile_when_missing_messageUuid_returns400_and_does_not_call_service() throws Exception {
         UUID roomUuid = UUID.randomUUID();
-        UUID userUuid = UUID.randomUUID();
         String objectName = "file.txt";
 
         mockMvc.perform(
                         delete("/api/messages/{roomUuid}/files/{objectName}", roomUuid, objectName)
                                 .header("Authorization", authHeader())
-                                .param("userUuid", userUuid.toString())
                                 .accept(MediaType.APPLICATION_JSON)
                 )
                 .andExpect(status().isBadRequest());

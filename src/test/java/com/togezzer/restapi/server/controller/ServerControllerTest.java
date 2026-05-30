@@ -90,7 +90,7 @@ public class ServerControllerTest {
 
         doReturn(serverEntity).when(this.serverRepository).save(any(ServerEntity.class));
 
-        mockMvc.perform(post("/api/server")
+        mockMvc.perform(post("/api/servers")
                         .header("Authorization", authHeader())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(serverDTO)))
@@ -125,7 +125,7 @@ public class ServerControllerTest {
 
         doReturn(Optional.of(serverEntity)).when(serverRepository).findByUuid(serverUuid);
 
-        mockMvc.perform(get("/api/server/{serverUuid}", serverUuid.toString())
+        mockMvc.perform(get("/api/servers/{serverUuid}", serverUuid.toString())
                         .header("Authorization", authHeader()))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
@@ -144,7 +144,7 @@ public class ServerControllerTest {
         final var serverUuid = UUID.randomUUID();
         final var request = new ServerDTO();
 
-        mockMvc.perform(get("/api/server/{serverUuid}", serverUuid)
+        mockMvc.perform(get("/api/servers/{serverUuid}", serverUuid)
                         .header("Authorization", authHeader())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
@@ -172,7 +172,7 @@ public class ServerControllerTest {
         doReturn(List.of()).when(roomRepository).findByServer_Id(serverEntity.getId());
         doReturn(List.of()).when(serverUserRepository).findAllByServer_Uuid(serverUuid);
 
-        mockMvc.perform(get("/api/server/{serverUuid}/detail", serverUuid)
+        mockMvc.perform(get("/api/servers/{serverUuid}/detail", serverUuid)
                         .header("Authorization", authHeader()))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
@@ -226,7 +226,7 @@ public class ServerControllerTest {
         doReturn(List.of(roomEntity)).when(roomRepository).findByServer_Id(serverEntity.getId());
         doReturn(List.of(serverUserEntity)).when(serverUserRepository).findAllByServer_Uuid(serverUuid);
 
-        mockMvc.perform(get("/api/server/{serverUuid}/detail", serverUuid)
+        mockMvc.perform(get("/api/servers/{serverUuid}/detail", serverUuid)
                         .header("Authorization", authHeader()))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
@@ -243,7 +243,7 @@ public class ServerControllerTest {
     void shouldReturn404WhenGettingDetailOfUnknownServer() throws Exception {
         final var serverUuid = UUID.randomUUID();
 
-        mockMvc.perform(get("/api/server/{serverUuid}/detail", serverUuid)
+        mockMvc.perform(get("/api/servers/{serverUuid}/detail", serverUuid)
                         .header("Authorization", authHeader()))
                 .andExpect(status().isNotFound())
                 .andExpect(content().string(containsString("does not exist")));

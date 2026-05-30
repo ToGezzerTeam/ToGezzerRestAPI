@@ -43,7 +43,7 @@ public class ServerRenameControllerTest {
         // Create a server first so rename returns 200 (otherwise it returns 404)
         final var createRequest = createServerDTO();
         
-        final var createResponse = mockMvc.perform(post("/api/server")
+        final var createResponse = mockMvc.perform(post("/api/servers")
                         .header("Authorization", authHeader())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(createRequest)))
@@ -57,7 +57,7 @@ public class ServerRenameControllerTest {
 
         final var renameRequest = new RenameServerDTO("New name");
 
-        mockMvc.perform(patch("/api/server/{serverUuid}/rename", createdServer.getUuid())
+        mockMvc.perform(patch("/api/servers/{serverUuid}/rename", createdServer.getUuid())
                         .header("Authorization", authHeader())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(renameRequest)))
@@ -69,7 +69,7 @@ public class ServerRenameControllerTest {
         final var uuid = UUID.randomUUID();
         final var request = new RenameServerDTO("   ");
 
-        mockMvc.perform(patch("/api/server/{serverUuid}/rename", uuid)
+        mockMvc.perform(patch("/api/servers/{serverUuid}/rename", uuid)
                         .header("Authorization", authHeader())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
@@ -80,7 +80,7 @@ public class ServerRenameControllerTest {
     void should_return_400_when_body_is_missing() throws Exception {
         final var uuid = UUID.randomUUID();
 
-        mockMvc.perform(patch("/api/server/{serverUuid}/rename", uuid)
+        mockMvc.perform(patch("/api/servers/{serverUuid}/rename", uuid)
                         .header("Authorization", authHeader())
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isBadRequest());
@@ -91,7 +91,7 @@ public class ServerRenameControllerTest {
         final var uuid = UUID.randomUUID();
         final var request = new RenameServerDTO("New name");
 
-        mockMvc.perform(patch("/api/server/{serverUuid}/rename", uuid)
+        mockMvc.perform(patch("/api/servers/{serverUuid}/rename", uuid)
                         .header("Authorization", authHeader())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))

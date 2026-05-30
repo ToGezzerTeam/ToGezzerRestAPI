@@ -23,6 +23,7 @@ import com.togezzer.restapi.user.UserRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
@@ -67,9 +68,9 @@ public class ServerService {
 
         final var serverEntityBuilder = ServerEntity.builder()
                 .id(null)
-                .uuid(serverDTO.getUuid())
+                .uuid(UUID.randomUUID())
                 .name(serverDTO.getName())
-                .createdAt(serverDTO.getCreatedAt())
+                .createdAt(Instant.now())
                 .createdBy(serverDTO.getCreatedBy())
                 .isPublic(serverDTO.isPublic())
                 .logo(serverDTO.getLogo())

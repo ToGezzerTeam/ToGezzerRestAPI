@@ -10,6 +10,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.net.URI;
 import java.util.UUID;
 
 @RequiredArgsConstructor
@@ -28,11 +29,10 @@ public class FileController {
     }
 
     @GetMapping("/{objectName}")
-    public ResponseEntity<String> getFileUrl(
+    public ResponseEntity<URI> getFileUrl(
             @PathVariable UUID roomUuid,
-            @PathVariable String objectName,
-            @RequestParam UUID userUuid) {
-        String url = fileService.getPresignedUrl(objectName, roomUuid, userUuid);
+            @PathVariable String objectName) {
+        URI url = URI.create(fileService.getPresignedUrl(objectName, roomUuid));
         return ResponseEntity.ok(url);
     }
 

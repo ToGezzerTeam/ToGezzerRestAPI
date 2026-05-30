@@ -44,7 +44,7 @@ class AuthControllerTest {
         request.setPassword("password123");
         request.setUsername("newuser");
 
-        mockMvc.perform(post("/register")
+        mockMvc.perform(post("/api/register")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
             .andExpect(status().isOk())
@@ -67,7 +67,7 @@ class AuthControllerTest {
         request.setPassword("password123");
         request.setUsername("existing");
 
-        mockMvc.perform(post("/register")
+        mockMvc.perform(post("/api/register")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
             .andExpect(status().isConflict());
@@ -86,7 +86,7 @@ class AuthControllerTest {
         request.setEmail("login@example.com");
         request.setPassword("password123");
 
-        mockMvc.perform(post("/login")
+        mockMvc.perform(post("/api/login")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
             .andExpect(status().isOk())
@@ -108,7 +108,7 @@ class AuthControllerTest {
         request.setEmail("login-bad@example.com");
         request.setPassword("wrong");
 
-        mockMvc.perform(post("/login")
+        mockMvc.perform(post("/api/login")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
             .andExpect(status().isUnauthorized());
