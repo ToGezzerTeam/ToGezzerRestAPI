@@ -224,7 +224,7 @@ class MessageServiceTest {
         doNothing().when(messageUtils).validateEntryExists(roomUuid, userUuid);
         doReturn(expected).when(messageApiClientService).getMessagesByRoomId(roomUuid, messageUuid, pageSize);
 
-        MessagesPageResponseDto result = messageService.getMessages(roomUuid, messageUuid, pageSize, userUuid);
+        MessagesPageResponseDto result = messageService.getMessages(roomUuid, messageUuid, pageSize);
 
         assertEquals(expected, result);
         verify(messageUtils).validateEntryExists(roomUuid, userUuid);
@@ -241,7 +241,7 @@ class MessageServiceTest {
         doNothing().when(messageUtils).validateEntryExists(roomUuid, userUuid);
         doReturn(expected).when(messageApiClientService).getMessagesByRoomId(roomUuid, null, pageSize);
 
-        MessagesPageResponseDto result = messageService.getMessages(roomUuid, null, pageSize, userUuid);
+        MessagesPageResponseDto result = messageService.getMessages(roomUuid, null, pageSize);
 
         assertEquals(expected, result);
         verify(messageUtils).validateEntryExists(roomUuid, userUuid);
@@ -255,7 +255,7 @@ class MessageServiceTest {
         doThrow(IllegalArgumentException.class).when(messageUtils).validateEntryExists(roomUuid, userUuid);
 
         assertThrows(IllegalArgumentException.class,
-                () -> messageService.getMessages(roomUuid, null, 100, userUuid));
+                () -> messageService.getMessages(roomUuid, null, 100));
 
         verifyNoInteractions(messageApiClientService, messageEventProducer);
     }
@@ -269,7 +269,7 @@ class MessageServiceTest {
                 .when(messageApiClientService).getMessagesByRoomId(roomUuid, null, 100);
 
         assertThrows(MessagesPageNotFoundRemoteException.class,
-                () -> messageService.getMessages(roomUuid, null, 100, userUuid));
+                () -> messageService.getMessages(roomUuid, null, 100));
 
         verify(messageUtils).validateEntryExists(roomUuid, userUuid);
         verifyNoInteractions(messageEventProducer);

@@ -185,17 +185,15 @@ class MessageControllerTest {
     @Test
     void getMessages_returns200_and_calls_service() throws Exception {
         UUID roomUuid = UUID.randomUUID();
-        UUID userUuid = UUID.randomUUID();
         UUID messageUuid = UUID.randomUUID();
 
         MessagesPageResponseDto response = new MessagesPageResponseDto(List.of(), false);
 
-        doReturn(response).when(messageService).getMessages(eq(roomUuid), eq(messageUuid.toString()), eq(50), eq(userUuid));
+        doReturn(response).when(messageService).getMessages(eq(roomUuid), eq(messageUuid.toString()), eq(50));
 
         mockMvc.perform(
                         get("/api/messages/{roomUuid}", roomUuid)
                                 .header("Authorization", authHeader())
-                                .param("userUuid", userUuid.toString())
                                 .param("lastMessageUuid", messageUuid.toString())
                                 .param("pageSize", "50")
                 )
@@ -204,37 +202,24 @@ class MessageControllerTest {
                 .andExpect(jsonPath("$.messageDTOS").isArray())
                 .andExpect(jsonPath("$.hasMore").value(false));
 
-        verify(messageService).getMessages(eq(roomUuid), eq(messageUuid.toString()), eq(50), eq(userUuid));
+        verify(messageService).getMessages(eq(roomUuid), eq(messageUuid.toString()), eq(50));
     }
 
     @Test
     void getMessages_without_messageUuid_uses_null_and_default_pageSize() throws Exception {
         UUID roomUuid = UUID.randomUUID();
-        UUID userUuid = UUID.randomUUID();
 
         MessagesPageResponseDto response = new MessagesPageResponseDto(List.of(), false);
 
-        doReturn(response).when(messageService).getMessages(eq(roomUuid), isNull(), eq(100), eq(userUuid));
+        doReturn(response).when(messageService).getMessages(eq(roomUuid), isNull(), eq(100));
 
         mockMvc.perform(
                         get("/api/messages/{roomUuid}", roomUuid)
                                 .header("Authorization", authHeader())
-                                .param("userUuid", userUuid.toString())
                 )
                 .andExpect(status().isOk());
 
-        verify(messageService).getMessages(eq(roomUuid), isNull(), eq(100), eq(userUuid));
-    }
-
-    @Test
-    void getMessages_when_missing_userUuid_returns400_and_does_not_call_service() throws Exception {
-        UUID roomUuid = UUID.randomUUID();
-
-        mockMvc.perform(get("/api/messages/{roomUuid}", roomUuid)
-                        .header("Authorization", authHeader()))
-                .andExpect(status().isBadRequest());
-
-        verifyNoInteractions(messageService);
+        verify(messageService).getMessages(eq(roomUuid), isNull(), eq(100));
     }
 
     @Test
