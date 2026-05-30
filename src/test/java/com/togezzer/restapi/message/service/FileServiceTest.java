@@ -103,7 +103,6 @@ class FileServiceTest {
         ContentDTO captured = contentCaptor.getValue();
         assertThat(captured.getType()).isEqualTo(ContentType.FILE);
         assertThat(captured.getValue())
-                .startsWith("/api/messages/" + roomUuid + "/files/")
                 .endsWith("_doc.pdf");
     }
 
@@ -181,7 +180,6 @@ class FileServiceTest {
     @Test
     void getPresignedUrl_shouldReturnUrl() throws Exception {
         // Given
-        UUID userUuid = UUID.randomUUID();
         String objectName = "abc_file.png";
         String expectedUrl = "http://minio/bucket/abc_file.png?X-Amz-Signature=xxx";
 
@@ -189,36 +187,34 @@ class FileServiceTest {
                 .thenReturn(expectedUrl);
 
         // When
-        String result = fileService.getPresignedUrl(objectName, roomUuid, userUuid);
+        String result = fileService.getPresignedUrl(objectName, roomUuid);
 
         // Then
         assertThat(result).isEqualTo(expectedUrl);
-        verify(messageUtils).validateEntryExists(roomUuid, userUuid);
+        verify(messageUtils).validateEntryExists(roomUuid, authorId);
     }
 
     @Test
     void getPresignedUrl_shouldValidateUserBelongsToRoom() throws Exception {
         // Given
-        UUID userUuid = UUID.randomUUID();
         when(minioClient.getPresignedObjectUrl(any(GetPresignedObjectUrlArgs.class)))
                 .thenReturn("http://minio/presigned");
 
         // When
-        fileService.getPresignedUrl("some_object", roomUuid, userUuid);
+        fileService.getPresignedUrl("some_object", roomUuid);
 
         // Then
-        verify(messageUtils).validateEntryExists(roomUuid, userUuid);
+        verify(messageUtils).validateEntryExists(roomUuid, authorId);
     }
 
     @Test
     void getPresignedUrl_shouldThrowMinioException_whenMinioFails() throws Exception {
         // Given
-        UUID userUuid = UUID.randomUUID();
         when(minioClient.getPresignedObjectUrl(any(GetPresignedObjectUrlArgs.class)))
                 .thenThrow(new RuntimeException("MinIO unavailable"));
 
         // When / Then
-        assertThatThrownBy(() -> fileService.getPresignedUrl("object.png", roomUuid, userUuid))
+        assertThatThrownBy(() -> fileService.getPresignedUrl("object.png", roomUuid))
                 .isInstanceOf(MinioException.class)
                 .hasMessageContaining("failed to generate presigned URL")
                 .hasMessageContaining(roomUuid.toString())
@@ -228,12 +224,11 @@ class FileServiceTest {
     @Test
     void getPresignedUrl_shouldThrowWhenUserNotInRoom() {
         // Given
-        UUID userUuid = UUID.randomUUID();
         doThrow(new RuntimeException("User not in room"))
-                .when(messageUtils).validateEntryExists(roomUuid, userUuid);
+                .when(messageUtils).validateEntryExists(roomUuid, authorId);
 
         // When / Then
-        assertThatThrownBy(() -> fileService.getPresignedUrl("object.png", roomUuid, userUuid))
+        assertThatThrownBy(() -> fileService.getPresignedUrl("object.png", roomUuid))
                 .isInstanceOf(RuntimeException.class)
                 .hasMessageContaining("User not in room");
 

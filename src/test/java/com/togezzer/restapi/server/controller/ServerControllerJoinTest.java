@@ -50,7 +50,7 @@ public class ServerControllerJoinTest {
         final String body = this.objectMapper.writeValueAsString(new JoinServerDTO(null));
 
         this.mockMvc.perform(
-                        post("/api/server/{serverUuid}/join", serverUuid)
+                        post("/api/servers/{serverUuid}/join", serverUuid)
                                 .header("Authorization", authHeader())
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(body)
@@ -69,7 +69,7 @@ public class ServerControllerJoinTest {
         final String body = this.objectMapper.writeValueAsString(new JoinServerDTO(null));
 
         this.mockMvc.perform(
-                        post("/api/server/{serverUuid}/join", serverUuid)
+                        post("/api/servers/{serverUuid}/join", serverUuid)
                                 .header("Authorization", authHeader())
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(body)
@@ -89,7 +89,7 @@ public class ServerControllerJoinTest {
         final String body = this.objectMapper.writeValueAsString(new JoinServerDTO(null));
 
         this.mockMvc.perform(
-                        post("/api/server/{serverUuid}/join", serverUuid)
+                        post("/api/servers/{serverUuid}/join", serverUuid)
                                 .header("Authorization", authHeader())
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(body)
@@ -109,7 +109,7 @@ public class ServerControllerJoinTest {
         final String body = this.objectMapper.writeValueAsString(new JoinServerDTO(null));
 
         this.mockMvc.perform(
-                        post("/api/server/{serverUuid}/join", serverUuid)
+                        post("/api/servers/{serverUuid}/join", serverUuid)
                                 .header("Authorization", authHeader())
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(body)
@@ -123,7 +123,7 @@ public class ServerControllerJoinTest {
         final String body = this.objectMapper.writeValueAsString(new JoinServerDTO(null));
 
         this.mockMvc.perform(
-                        post("/api/server/{serverUuid}/join", "not-a-uuid")
+                        post("/api/servers/{serverUuid}/join", "not-a-uuid")
                                 .header("Authorization", authHeader())
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(body)

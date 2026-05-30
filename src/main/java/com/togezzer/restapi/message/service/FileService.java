@@ -38,8 +38,7 @@ public class FileService {
                 .replaceAll("[^a-zA-Z0-9._-]", "_");
         String objectName = messageUuid + "_" + sanitizedFilename;
         saveToMinio(file,roomUuid,objectName);
-        String fileUrl = "/api/messages/" + roomUuid + "/files/" + objectName;
-        ContentDTO contentDTO = ContentDTO.builder().value(fileUrl).type(ContentType.FILE).build();
+        ContentDTO contentDTO = ContentDTO.builder().value(objectName).type(ContentType.FILE).build();
         MessageDTO messageDTO = messageUtils.createMessageDTO(roomUuid, contentDTO, null, userUuid, roomUuid);
         messageEventProducer.publishToQueues(messageDTO);
     }
@@ -83,7 +82,8 @@ public class FileService {
     }
 
 
-    public String getPresignedUrl(String objectName, UUID roomUuid, UUID userUuid) {
+    public String getPresignedUrl(String objectName, UUID roomUuid) {
+        UUID userUuid = authUtils.getCurrentUserUuid();
         messageUtils.validateEntryExists(roomUuid, userUuid);
         String bucketName = roomUuid.toString();
         try {

@@ -4,6 +4,7 @@ import org.springframework.amqp.core.Binding;
 import org.springframework.amqp.core.BindingBuilder;
 import org.springframework.amqp.core.DirectExchange;
 import org.springframework.amqp.core.Queue;
+import org.springframework.amqp.core.QueueBuilder;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.support.converter.JacksonJsonMessageConverter;
@@ -29,6 +30,12 @@ public class RabbitMqConfig {
     @Value("${togezzer.rabbitmq.routing-key.live-chat-service:routing-message-live-chat-service}")
     private String liveChatServiceRoutingKey;
 
+    @Value("${togezzer.rabbitmq.exchanges.chat-sauvegarde.dlq}")
+    private String dlqChatSauvegardeExchange;
+
+    @Value("${togezzer.rabbitmq.routing-keys.chat-sauvegarde.dlq}")
+    private String dlqChatSauvegardeRoutingKey;
+
     @Bean
     public DirectExchange messageExchange() {
         return new DirectExchange(messageExchangeName);
@@ -36,7 +43,10 @@ public class RabbitMqConfig {
 
     @Bean
     public Queue messageQueueChatSauvegarde() {
-        return new Queue(chatSauvegardeQueueName, true);
+        return QueueBuilder.durable(chatSauvegardeQueueName)
+                .withArgument("x-dead-letter-exchange", dlqChatSauvegardeExchange)
+                .withArgument("x-dead-letter-routing-key", dlqChatSauvegardeRoutingKey)
+                .build();
     }
 
     @Bean
