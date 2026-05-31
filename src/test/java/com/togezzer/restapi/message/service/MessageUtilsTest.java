@@ -107,6 +107,7 @@ class MessageUtilsTest {
         UUID roomUuid = UUID.randomUUID();
         UUID authorUuid = UUID.randomUUID();
         UUID messageUuid = UUID.randomUUID();
+        String authorName = "test";
 
         ContentDTO content = new ContentDTO();
         content.setType(ContentType.TEXT);
@@ -119,6 +120,7 @@ class MessageUtilsTest {
                 content,
                 null,
                 authorUuid,
+                authorName,
                 messageUuid
         );
 
@@ -134,6 +136,7 @@ class MessageUtilsTest {
         assertFalse(messageDTO.getCreatedAt().isAfter(after));
         assertEquals(messageUuid.toString(), messageDTO.getUuid());
         assertEquals(authorUuid.toString(), messageDTO.getAuthorId());
+        assertEquals(authorName,messageDTO.getAuthorName());
     }
 
     @Test
@@ -141,6 +144,7 @@ class MessageUtilsTest {
         UUID roomUuid = UUID.randomUUID();
         UUID authorUuid = UUID.randomUUID();
         UUID messageUuid = UUID.randomUUID();
+        String authorName = "test";
 
         ContentDTO content = new ContentDTO();
         content.setType(ContentType.TEXT);
@@ -153,6 +157,7 @@ class MessageUtilsTest {
                 content,
                 answerTo,
                 authorUuid,
+                authorName,
                 messageUuid
         );
 

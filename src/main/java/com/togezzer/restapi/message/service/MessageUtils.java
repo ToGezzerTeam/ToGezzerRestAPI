@@ -43,12 +43,13 @@ public class MessageUtils {
         }
     }
 
-    public MessageDTO createMessageDTO(UUID roomUuid, ContentDTO content, String answerTo, UUID authorUuid, UUID messageUuid) {
+    public MessageDTO createMessageDTO(UUID roomUuid, ContentDTO content, String answerTo, UUID authorUuid, String authorName, UUID messageUuid) {
         MessageDTO messageDTO = new MessageDTO();
         messageDTO.setContent(content);
         messageDTO.setAnswerTo(answerTo);
         messageDTO.setRoomId(roomUuid.toString());
         messageDTO.setState(MessageState.CREATED);
+        messageDTO.setAuthorName(authorName);
         messageDTO.setCreatedAt(Instant.now());
         messageDTO.setUuid(messageUuid.toString());
         messageDTO.setAuthorId(authorUuid.toString());

@@ -32,6 +32,8 @@ public class MessageDTO {
     @NotBlank
     private String authorId;
 
+    private String authorName;
+
     private String answerTo;
 
     @NotNull

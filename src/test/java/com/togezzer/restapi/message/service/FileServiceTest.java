@@ -73,7 +73,7 @@ class FileServiceTest {
         when(minioClient.bucketExists(any(BucketExistsArgs.class))).thenReturn(true);
 
         MessageDTO builtMessage = mock(MessageDTO.class);
-        when(messageUtils.createMessageDTO(any(), any(), any(), any(), any())).thenReturn(builtMessage);
+        when(messageUtils.createMessageDTO(any(), any(), any(), any(), any(), any())).thenReturn(builtMessage);
 
         // When
         fileService.uploadFile(multipartFile, roomUuid);
@@ -93,7 +93,7 @@ class FileServiceTest {
         when(minioClient.bucketExists(any(BucketExistsArgs.class))).thenReturn(true);
 
         ArgumentCaptor<ContentDTO> contentCaptor = ArgumentCaptor.forClass(ContentDTO.class);
-        when(messageUtils.createMessageDTO(any(), contentCaptor.capture(), any(), any(), any()))
+        when(messageUtils.createMessageDTO(any(), contentCaptor.capture(), any(),any(), any(), any()))
                 .thenReturn(mock(MessageDTO.class));
 
         // When
@@ -114,7 +114,7 @@ class FileServiceTest {
         when(multipartFile.getSize()).thenReturn(0L);
         when(multipartFile.getContentType()).thenReturn("text/plain");
         when(minioClient.bucketExists(any(BucketExistsArgs.class))).thenReturn(false);
-        when(messageUtils.createMessageDTO(any(), any(), any(), any(), any()))
+        when(messageUtils.createMessageDTO(any(), any(), any(), any(),any(), any()))
                 .thenReturn(mock(MessageDTO.class));
 
         // When
@@ -132,7 +132,7 @@ class FileServiceTest {
         when(multipartFile.getSize()).thenReturn(0L);
         when(multipartFile.getContentType()).thenReturn("text/plain");
         when(minioClient.bucketExists(any(BucketExistsArgs.class))).thenReturn(true);
-        when(messageUtils.createMessageDTO(any(), any(), any(), any(), any()))
+        when(messageUtils.createMessageDTO(any(), any(), any(), any(),any(), any()))
                 .thenReturn(mock(MessageDTO.class));
 
         // When

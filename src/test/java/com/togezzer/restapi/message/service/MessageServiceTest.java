@@ -41,10 +41,12 @@ class MessageServiceTest {
     @InjectMocks private MessageService messageService;
 
     private final UUID userUuid = UUID.randomUUID();
+    private final String userName = "test";
 
     @BeforeEach
     void setup(){
         lenient().when(authUtils.getCurrentUserUuid()).thenReturn(userUuid);
+        lenient().when(authUtils.getCurrentUserName()).thenReturn("test");
     }
 
     @Test
@@ -190,7 +192,7 @@ class MessageServiceTest {
         create.setAnswerTo(null);
 
         doNothing().when(messageUtils).validateEntryExists(roomUuid,userUuid);
-        doReturn(new MessageDTO()).when(messageUtils).createMessageDTO(eq(roomUuid),any(ContentDTO.class),eq(create.getAnswerTo()),eq(userUuid),any(UUID.class));
+        doReturn(new MessageDTO()).when(messageUtils).createMessageDTO(eq(roomUuid),any(ContentDTO.class),eq(create.getAnswerTo()),eq(userUuid),eq(userName),any(UUID.class));
 
         messageService.createMessage(roomUuid, create);
 
