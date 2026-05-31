@@ -43,7 +43,7 @@ public class UserEntity {
     @Size(min = 6, max = 255)
     private String password;
 
-    @Column(unique = true, nullable = false, length = 100)
+    @Column(nullable = false, length = 100)
     @Size(min = 3, max = 100)
     private String username;
 }

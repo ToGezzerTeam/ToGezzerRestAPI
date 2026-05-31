@@ -19,4 +19,6 @@ public class AuthUtils {
     public UUID getCurrentUserUuid() {
         return getCurrentUser().getUuid();
     }
+
+    public String getCurrentUserName(){ return getCurrentUser().getUsername(); }
 }
