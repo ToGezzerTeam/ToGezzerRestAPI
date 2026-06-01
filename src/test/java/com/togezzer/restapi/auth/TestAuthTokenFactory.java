@@ -11,9 +11,13 @@ public final class TestAuthTokenFactory {
     }
 
     public static String createBearerToken(JwtService jwtService) {
+        return createBearerToken(jwtService, UUID.randomUUID());
+    }
+
+    public static String createBearerToken(JwtService jwtService, UUID userUuid) {
         UserEntity user = UserEntity.builder()
             .id(1L)
-            .uuid(UUID.randomUUID())
+            .uuid(userUuid)
             .email("test@example.com")
             .username("testuser")
             .password("password")
