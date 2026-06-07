@@ -39,7 +39,7 @@ public class FileService {
         String objectName = messageUuid + "_" + sanitizedFilename;
         saveToMinio(file,roomUuid,objectName);
         ContentDTO contentDTO = ContentDTO.builder().value(objectName).type(ContentType.FILE).build();
-        MessageDTO messageDTO = messageUtils.createMessageDTO(roomUuid, contentDTO, null, userUuid, authUtils.getCurrentUserName(), roomUuid);
+        MessageDTO messageDTO = messageUtils.createMessageDTO(roomUuid, contentDTO, null, userUuid, authUtils.getCurrentUserName(), messageUuid);
         messageEventProducer.publishToQueues(messageDTO);
     }
 
