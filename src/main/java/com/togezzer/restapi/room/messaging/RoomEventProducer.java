@@ -1,7 +1,6 @@
 package com.togezzer.restapi.room.messaging;
 
 import com.togezzer.restapi.room.dto.RoomEventDTO;
-import com.togezzer.restapi.user.UserDto;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;

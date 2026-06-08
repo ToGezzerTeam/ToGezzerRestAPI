@@ -36,10 +36,10 @@ public class RabbitMqConfig {
     @Value("${togezzer.rabbitmq.routing-key.live-chat-service:routing-message-live-chat-service}")
     private String liveChatServiceRoutingKey;
 
-    @Value("togezzer.rabbitmq.routing-key.room:rooting-room")
+    @Value("${togezzer.rabbitmq.routing-key.room:rooting-room}")
     private String roomRootingKey;
 
-    @Value("togezzer.rabbitmq.routing-key.user:rooting-user")
+    @Value("${togezzer.rabbitmq.routing-key.user:rooting-user}")
     private String userRootingKey;
 
     @Value("${togezzer.rabbitmq.exchanges.chat-sauvegarde.dlq}")
