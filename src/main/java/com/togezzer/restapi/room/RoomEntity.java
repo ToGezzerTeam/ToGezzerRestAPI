@@ -1,5 +1,6 @@
 package com.togezzer.restapi.room;
 
+import com.togezzer.restapi.room.enums.ChannelType;
 import com.togezzer.restapi.server.ServerEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

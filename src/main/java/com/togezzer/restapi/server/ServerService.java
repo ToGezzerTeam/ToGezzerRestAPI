@@ -20,6 +20,7 @@ import com.togezzer.restapi.user.UserDto;
 import com.togezzer.restapi.user.UserEntity;
 import com.togezzer.restapi.user.UserMapper;
 import com.togezzer.restapi.user.UserRepository;
+import com.togezzer.restapi.user.messaging.UserEventProducer;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -40,6 +41,7 @@ public class ServerService {
     private final UserMapper userMapper;
     private final ServerMapper serverMapper;
     private final AuthUtils authUtils;
+    private final UserEventProducer userEventProducer;
 
     private ServerEntity getServerByUuid(UUID serverUuid) {
         return serverRepository.findByUuid(serverUuid)
@@ -108,5 +110,11 @@ public class ServerService {
 
         this.serverUserRepository.save(serverUserEntity);
         this.roomService.addUserToListRoom(userUuid, serverEntity.getId());
+
+        UserDto userDto = new UserDto();
+        userDto.setUsername(userEntity.getUsername());
+        userDto.setUuid(userEntity.getUuid());
+
+        this.userEventProducer.publishToQueues(userDto);
     }
 }

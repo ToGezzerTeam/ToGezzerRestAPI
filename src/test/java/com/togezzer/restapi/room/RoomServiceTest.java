@@ -8,6 +8,10 @@ import com.togezzer.restapi.exception.RoomNotFoundException;
 import com.togezzer.restapi.exception.UserNotFoundException;
 import com.togezzer.restapi.room.dto.JoinRoomDTO;
 import com.togezzer.restapi.room.dto.RoomDTO;
+import com.togezzer.restapi.room.dto.RoomEventDTO;
+import com.togezzer.restapi.room.enums.ChannelType;
+import com.togezzer.restapi.room.enums.StatusEvent;
+import com.togezzer.restapi.room.messaging.RoomEventProducer;
 import com.togezzer.restapi.room_users.RoomUserEntity;
 import com.togezzer.restapi.room_users.RoomUserId;
 import com.togezzer.restapi.room_users.RoomUserRepository;
@@ -39,7 +43,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-public class RoomServiceTest {
+class RoomServiceTest {
 
     @InjectMocks
     private RoomService roomService;
@@ -57,6 +61,9 @@ public class RoomServiceTest {
     private AuthUtils authUtils;
 
     @Mock
+    private RoomEventProducer roomEventProducer;
+
+    @Mock
     private ServerRepository serverRepository;
 
     @Spy
@@ -66,7 +73,9 @@ public class RoomServiceTest {
 
     @BeforeEach
     void setup(){
+
         lenient().when(authUtils.getCurrentUserUuid()).thenReturn(userUuid);
+        lenient().doNothing().when(roomEventProducer).publishToQueues(any(RoomEventDTO.class));
     }
 
     @Test
@@ -77,28 +86,24 @@ public class RoomServiceTest {
                 .channelType(ChannelType.TEXT)
                 .build();
 
-        final UUID generatedUuid = UUID.randomUUID();
-        final Instant now = Instant.now();
-
         final var roomEntity = RoomEntity.builder()
                 .id(1L)
-                .uuid(generatedUuid)
+                .uuid(UUID.randomUUID())
                 .name("Test room")
                 .channelType(ChannelType.TEXT)
-                .createdAt(now)
+                .createdAt(Instant.now())
+                .server(null) // pas de server
                 .build();
 
         doReturn(roomEntity).when(this.roomRepository).save(any(RoomEntity.class));
+        doNothing().when(this.roomEventProducer).publishToQueues(any(RoomEventDTO.class));
 
         // Act
-        final var created = roomService.create(roomDto);
+        assertDoesNotThrow(() -> roomService.create(roomDto));
 
         // Assert
-        assertEquals(1L, created.getId());
-        assertEquals(generatedUuid, created.getUuid());
-        assertEquals("Test room", created.getName());
-        assertEquals(ChannelType.TEXT, created.getChannelType());
-        assertEquals(now, created.getCreatedAt());
+        verify(this.roomRepository, times(1)).save(any(RoomEntity.class));
+        verify(this.roomEventProducer, times(1)).publishToQueues(any(RoomEventDTO.class));
     }
 
     @Test
@@ -210,7 +215,7 @@ public class RoomServiceTest {
         doReturn(roomEntity).when(this.roomRepository).save(any(RoomEntity.class));
 
         // Act
-        final var created = roomService.create(roomDto);
+        assertDoesNotThrow(() -> roomService.create(roomDto));
 
         // Assert
         final var argumentCaptor = ArgumentCaptor.forClass(RoomEntity.class);
@@ -218,7 +223,6 @@ public class RoomServiceTest {
 
         assertNotNull(argumentCaptor.getValue().getServer());
         assertEquals(serverId, argumentCaptor.getValue().getServer().getId());
-        assertEquals(serverId, created.getServerId());
     }
 
     @Test
@@ -274,6 +278,8 @@ public class RoomServiceTest {
         assertEquals("New name", saved.getName());
         assertEquals(ChannelType.TEXT, saved.getChannelType());
         assertEquals(createdAt, saved.getCreatedAt());
+
+        verify(this.roomEventProducer, times(1)).publishToQueues(any(RoomEventDTO.class));
     }
 
     @Test
@@ -389,6 +395,94 @@ public class RoomServiceTest {
         // Act + Assert
         assertThrows(UserNotFoundException.class, () -> roomService.addUserToListRoom(someUserUuid, serverId));
         verify(roomUserRepository, never()).saveAll(any());
+    }
+
+    @Test
+    void should_delete_room_successfully() {
+        // Arrange
+        final var roomUuid = UUID.randomUUID();
+        final var roomEntity = createRoomEntity(roomUuid, "Test room");
+
+        doReturn(Optional.of(roomEntity)).when(this.roomRepository).findByUuid(roomUuid);
+
+        // Act
+        assertDoesNotThrow(() -> roomService.delete(roomUuid));
+
+        // Assert
+        verify(this.roomUserRepository, times(1)).deleteAllByRoom(roomEntity);
+        verify(this.roomRepository, times(1)).delete(roomEntity);
+        verify(this.roomEventProducer, times(1)).publishToQueues(any(RoomEventDTO.class));
+    }
+
+    @Test
+    void should_delete_room_users_before_room() {
+        // Arrange
+        final var roomUuid = UUID.randomUUID();
+        final var roomEntity = createRoomEntity(roomUuid, "Test room");
+
+        doReturn(Optional.of(roomEntity)).when(this.roomRepository).findByUuid(roomUuid);
+
+        // Act
+        roomService.delete(roomUuid);
+
+        // Assert — vérifie l'ordre : d'abord users, ensuite room
+        final var inOrder = inOrder(roomUserRepository, roomRepository);
+        inOrder.verify(roomUserRepository).deleteAllByRoom(roomEntity);
+        inOrder.verify(roomRepository).delete(roomEntity);
+    }
+
+    @Test
+    void should_throw_when_deleting_unknown_room() {
+        // Arrange
+        final var roomUuid = UUID.randomUUID();
+        doReturn(Optional.empty()).when(this.roomRepository).findByUuid(roomUuid);
+
+        // Act + Assert
+        assertThrows(RoomNotFoundException.class, () -> roomService.delete(roomUuid));
+        verify(this.roomUserRepository, never()).deleteAllByRoom(any());
+        verify(this.roomRepository, never()).delete(any());
+        verify(this.roomEventProducer, never()).publishToQueues(any());
+    }
+
+    @Test
+    void should_delete_room_with_server_and_publish_event_with_server_id() {
+        // Arrange
+        final var roomUuid = UUID.randomUUID();
+        final var serverEntity = ServerEntity.builder().id(42L).build();
+        final var roomEntity = createRoomEntity(roomUuid, "Test room");
+        roomEntity.setServer(serverEntity);
+
+        doReturn(Optional.of(roomEntity)).when(this.roomRepository).findByUuid(roomUuid);
+
+        final var eventCaptor = ArgumentCaptor.forClass(RoomEventDTO.class);
+
+        // Act
+        roomService.delete(roomUuid);
+
+        // Assert
+        verify(this.roomEventProducer).publishToQueues(eventCaptor.capture());
+        assertEquals(StatusEvent.DELETED, eventCaptor.getValue().statusEvent());
+        assertEquals(42L, eventCaptor.getValue().serverId());
+        assertEquals(roomUuid, eventCaptor.getValue().uuid());
+    }
+
+    @Test
+    void should_delete_room_without_server_and_publish_event_with_null_server_id() {
+        // Arrange
+        final var roomUuid = UUID.randomUUID();
+        final var roomEntity = createRoomEntity(roomUuid, "Test room"); // server = null
+
+        doReturn(Optional.of(roomEntity)).when(this.roomRepository).findByUuid(roomUuid);
+
+        final var eventCaptor = ArgumentCaptor.forClass(RoomEventDTO.class);
+
+        // Act
+        roomService.delete(roomUuid);
+
+        // Assert
+        verify(this.roomEventProducer).publishToQueues(eventCaptor.capture());
+        assertEquals(StatusEvent.DELETED, eventCaptor.getValue().statusEvent());
+        assertNull(eventCaptor.getValue().serverId());
     }
 
     private RoomEntity createRoomEntity(final UUID uuid, final String name) {
