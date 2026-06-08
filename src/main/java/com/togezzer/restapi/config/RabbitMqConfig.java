@@ -6,6 +6,7 @@ import org.springframework.amqp.core.DirectExchange;
 import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.core.QueueBuilder;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
+import org.springframework.amqp.rabbit.core.RabbitAdmin;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.support.converter.JacksonJsonMessageConverter;
 import org.springframework.beans.factory.annotation.Value;
@@ -36,10 +37,10 @@ public class RabbitMqConfig {
     @Value("${togezzer.rabbitmq.routing-key.live-chat-service:routing-message-live-chat-service}")
     private String liveChatServiceRoutingKey;
 
-    @Value("${togezzer.rabbitmq.routing-key.room:rooting-room}")
+    @Value("${togezzer.rabbitmq.routing-key.room:routing-room}")
     private String roomRootingKey;
 
-    @Value("${togezzer.rabbitmq.routing-key.user:rooting-user}")
+    @Value("${togezzer.rabbitmq.routing-key.user:routing-user}")
     private String userRootingKey;
 
     @Value("${togezzer.rabbitmq.exchanges.chat-sauvegarde.dlq}")
