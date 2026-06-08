@@ -1,6 +1,7 @@
 package com.togezzer.restapi.user.messaging;
 
-import com.togezzer.restapi.user.UserDto;
+import com.togezzer.restapi.user.dto.UserDto;
+import com.togezzer.restapi.user.dto.UserEventDTO;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -34,30 +35,32 @@ class UserEventProducerTest {
     @Test
     void should_publish_user_event_to_correct_exchange_and_routing_key() {
         // Arrange
-        final var userDto = new UserDto();
-        userDto.setUuid(UUID.randomUUID());
-        userDto.setUsername("testuser");
+        final var userEventDto = UserEventDTO.builder()
+                .uuid(UUID.randomUUID())
+                .userName("testuser")
+                .serverUuid(UUID.randomUUID()).build();
 
         // Act
-        userEventProducer.publishToQueues(userDto);
+        userEventProducer.publishToQueues(userEventDto);
 
         // Assert
-        verify(rabbitTemplate, times(1)).convertAndSend(exchange, routingKeyUser, userDto);
+        verify(rabbitTemplate, times(1)).convertAndSend(exchange, routingKeyUser, userEventDto);
     }
 
     @Test
     void should_pass_correct_payload_to_rabbit_template() {
         // Arrange
-        final var userDto = new UserDto();
-        userDto.setUuid(UUID.randomUUID());
-        userDto.setUsername("testuser");
+        final var userEventDto = UserEventDTO.builder()
+                .uuid(UUID.randomUUID())
+                .userName("testuser")
+                .serverUuid(UUID.randomUUID()).build();
 
         final var exchangeCaptor = ArgumentCaptor.forClass(String.class);
         final var routingKeyCaptor = ArgumentCaptor.forClass(String.class);
         final var payloadCaptor = ArgumentCaptor.forClass(Object.class);
 
         // Act
-        userEventProducer.publishToQueues(userDto);
+        userEventProducer.publishToQueues(userEventDto);
 
         // Assert
         verify(rabbitTemplate).convertAndSend(
@@ -68,6 +71,6 @@ class UserEventProducerTest {
 
         assertEquals(exchange, exchangeCaptor.getValue());
         assertEquals(routingKeyUser, routingKeyCaptor.getValue());
-        assertEquals(userDto, payloadCaptor.getValue());
+        assertEquals(userEventDto, payloadCaptor.getValue());
     }
 }

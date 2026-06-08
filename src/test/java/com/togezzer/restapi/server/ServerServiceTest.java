@@ -12,10 +12,11 @@ import com.togezzer.restapi.server.dto.RenameServerDTO;
 import com.togezzer.restapi.server.dto.ServerDTO;
 import com.togezzer.restapi.server_users.ServerUserEntity;
 import com.togezzer.restapi.server_users.ServerUserRepository;
-import com.togezzer.restapi.user.UserDto;
+import com.togezzer.restapi.user.dto.UserDto;
 import com.togezzer.restapi.user.UserEntity;
 import com.togezzer.restapi.user.UserMapper;
 import com.togezzer.restapi.user.UserRepository;
+import com.togezzer.restapi.user.dto.UserEventDTO;
 import com.togezzer.restapi.user.messaging.UserEventProducer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -78,7 +79,7 @@ class ServerServiceTest {
     @BeforeEach
     void setup(){
         lenient().when(authUtils.getCurrentUserUuid()).thenReturn(userUuid);
-        lenient().doNothing().when(userEventProducer).publishToQueues(any(UserDto.class));
+        lenient().doNothing().when(userEventProducer).publishToQueues(any(UserEventDTO.class));
     }
 
     @Test

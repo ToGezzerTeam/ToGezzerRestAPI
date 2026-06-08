@@ -1,5 +1,6 @@
 package com.togezzer.restapi.user;
 
+import com.togezzer.restapi.user.dto.UserDto;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 

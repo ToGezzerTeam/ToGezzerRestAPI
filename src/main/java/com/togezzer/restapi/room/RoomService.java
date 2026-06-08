@@ -60,7 +60,7 @@ public class RoomService {
                 .id(createdRoomEntity.getId())
                 .uuid(createdRoomEntity.getUuid())
                 .name(createdRoomEntity.getName())
-                .serverId(createdRoomEntity.getServer() != null ? createdRoomEntity.getServer().getId() : null)
+                .serverUuid(createdRoomEntity.getServer() != null ? createdRoomEntity.getServer().getUuid() : null)
                 .build();
 
         roomEventProducer.publishToQueues(roomEventDTO);
@@ -83,7 +83,7 @@ public class RoomService {
                 .id(renameRoomEntity.getId())
                 .uuid(renameRoomEntity.getUuid())
                 .name(renameRoomEntity.getName())
-                .serverId(renameRoomEntity.getServer() != null ? renameRoomEntity.getServer().getId() : null)
+                .serverUuid(renameRoomEntity.getServer() != null ? renameRoomEntity.getServer().getUuid() : null)
                 .build();
 
         roomEventProducer.publishToQueues(roomEventDTO);
@@ -140,7 +140,7 @@ public class RoomService {
                 .id(roomEntity.getId())
                 .uuid(roomEntity.getUuid())
                 .name(roomEntity.getName())
-                .serverId(roomEntity.getServer() != null ? roomEntity.getServer().getId() : null)
+                .serverUuid(roomEntity.getServer() != null ? roomEntity.getServer().getUuid() : null)
                 .build();
 
         roomEventProducer.publishToQueues(roomEventDTO);

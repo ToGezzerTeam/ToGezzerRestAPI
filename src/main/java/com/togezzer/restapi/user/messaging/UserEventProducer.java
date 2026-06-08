@@ -1,6 +1,6 @@
 package com.togezzer.restapi.user.messaging;
 
-import com.togezzer.restapi.user.UserDto;
+import com.togezzer.restapi.user.dto.UserEventDTO;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -21,7 +21,7 @@ public class UserEventProducer {
         this.routingKeyUser = routingKeyUser;
     }
 
-    public void publishToQueues(UserDto userDto) {
-        rabbitTemplate.convertAndSend(exchange, routingKeyUser, userDto);
+    public void publishToQueues(UserEventDTO userEventDTO) {
+        rabbitTemplate.convertAndSend(exchange, routingKeyUser, userEventDTO);
     }
 }

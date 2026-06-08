@@ -448,7 +448,8 @@ class RoomServiceTest {
     void should_delete_room_with_server_and_publish_event_with_server_id() {
         // Arrange
         final var roomUuid = UUID.randomUUID();
-        final var serverEntity = ServerEntity.builder().id(42L).build();
+        final var serverUuid = UUID.randomUUID();
+        final var serverEntity = ServerEntity.builder().id(42L).uuid(serverUuid).build();
         final var roomEntity = createRoomEntity(roomUuid, "Test room");
         roomEntity.setServer(serverEntity);
 
@@ -462,7 +463,7 @@ class RoomServiceTest {
         // Assert
         verify(this.roomEventProducer).publishToQueues(eventCaptor.capture());
         assertEquals(StatusEvent.DELETED, eventCaptor.getValue().statusEvent());
-        assertEquals(42L, eventCaptor.getValue().serverId());
+        assertEquals(serverUuid, eventCaptor.getValue().serverUuid());
         assertEquals(roomUuid, eventCaptor.getValue().uuid());
     }
 
@@ -482,7 +483,7 @@ class RoomServiceTest {
         // Assert
         verify(this.roomEventProducer).publishToQueues(eventCaptor.capture());
         assertEquals(StatusEvent.DELETED, eventCaptor.getValue().statusEvent());
-        assertNull(eventCaptor.getValue().serverId());
+        assertNull(eventCaptor.getValue().serverUuid());
     }
 
     private RoomEntity createRoomEntity(final UUID uuid, final String name) {

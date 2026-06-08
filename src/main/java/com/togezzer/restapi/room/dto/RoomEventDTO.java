@@ -13,5 +13,5 @@ public record RoomEventDTO(
         UUID uuid,
         String name,
         ChannelType channelType,
-        Long serverId
+        UUID serverUuid
 ) {}
