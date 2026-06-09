@@ -2,7 +2,7 @@ package com.togezzer.restapi.server;
 
 import com.togezzer.restapi.auth.service.AuthUtils;
 import com.togezzer.restapi.exception.*;
-import com.togezzer.restapi.room.ChannelType;
+import com.togezzer.restapi.room.enums.ChannelType;
 import com.togezzer.restapi.room.RoomEntity;
 import com.togezzer.restapi.room.RoomMapper;
 import com.togezzer.restapi.room.RoomRepository;
@@ -12,9 +12,12 @@ import com.togezzer.restapi.server.dto.RenameServerDTO;
 import com.togezzer.restapi.server.dto.ServerDTO;
 import com.togezzer.restapi.server_users.ServerUserEntity;
 import com.togezzer.restapi.server_users.ServerUserRepository;
+import com.togezzer.restapi.user.dto.UserDto;
 import com.togezzer.restapi.user.UserEntity;
 import com.togezzer.restapi.user.UserMapper;
 import com.togezzer.restapi.user.UserRepository;
+import com.togezzer.restapi.user.dto.UserEventDTO;
+import com.togezzer.restapi.user.messaging.UserEventProducer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -36,7 +39,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-public class ServerServiceTest {
+class ServerServiceTest {
 
     @InjectMocks
     ServerService serverService;
@@ -52,6 +55,9 @@ public class ServerServiceTest {
 
     @Mock
     private RoomRepository roomRepository;
+
+    @Mock
+    private UserEventProducer userEventProducer;
 
     @Spy
     private RoomMapper roomMapper = Mappers.getMapper(RoomMapper.class);
@@ -73,6 +79,7 @@ public class ServerServiceTest {
     @BeforeEach
     void setup(){
         lenient().when(authUtils.getCurrentUserUuid()).thenReturn(userUuid);
+        lenient().doNothing().when(userEventProducer).publishToQueues(any(UserEventDTO.class));
     }
 
     @Test

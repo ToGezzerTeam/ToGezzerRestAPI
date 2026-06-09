@@ -2,7 +2,7 @@ package com.togezzer.restapi.server.controller;
 
 import com.togezzer.restapi.auth.TestAuthTokenFactory;
 import com.togezzer.restapi.auth.service.JwtService;
-import com.togezzer.restapi.room.ChannelType;
+import com.togezzer.restapi.room.enums.ChannelType;
 import com.togezzer.restapi.room.RoomEntity;
 import com.togezzer.restapi.room.RoomRepository;
 import com.togezzer.restapi.server.ServerEntity;

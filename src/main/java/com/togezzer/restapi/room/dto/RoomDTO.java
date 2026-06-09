@@ -1,6 +1,6 @@
 package com.togezzer.restapi.room.dto;
 
-import com.togezzer.restapi.room.ChannelType;
+import com.togezzer.restapi.room.enums.ChannelType;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;

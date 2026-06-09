@@ -1,12 +1,14 @@
 package com.togezzer.restapi.room.controller;
 
-import com.togezzer.restapi.room.ChannelType;
+import com.togezzer.restapi.room.enums.ChannelType;
 import com.togezzer.restapi.room.dto.RoomDTO;
+import com.togezzer.restapi.room.messaging.RoomEventProducer;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import tools.jackson.databind.ObjectMapper;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -18,7 +20,7 @@ import com.togezzer.restapi.auth.service.JwtService;
 
 @SpringBootTest
 @AutoConfigureMockMvc
-public class RoomControllerCreateTest {
+class RoomControllerCreateTest {
     @Autowired
     private MockMvc mockMvc;
 
@@ -27,6 +29,9 @@ public class RoomControllerCreateTest {
 
     @Autowired
     private JwtService jwtService;
+
+    @MockitoBean
+    private RoomEventProducer roomEventProducer;
 
     private String authHeader() {
         return TestAuthTokenFactory.createBearerToken(jwtService);
@@ -43,11 +48,7 @@ public class RoomControllerCreateTest {
                         .header("Authorization", authHeader())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(roomDTO)))
-                .andExpect(status().isCreated())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.name").value("General Chat"))
-                .andExpect(jsonPath("$.channelType").value("TEXT"))
-                .andExpect(jsonPath("$.id").isNotEmpty());
+                .andExpect(status().isCreated());
     }
 
     @Test

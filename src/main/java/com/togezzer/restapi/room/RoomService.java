@@ -8,6 +8,9 @@ import com.togezzer.restapi.exception.AlreadyInRoomException;
 import com.togezzer.restapi.exception.RoomNotFoundException;
 import com.togezzer.restapi.exception.UserNotFoundException;
 import com.togezzer.restapi.room.dto.JoinRoomDTO;
+import com.togezzer.restapi.room.dto.RoomEventDTO;
+import com.togezzer.restapi.room.enums.StatusEvent;
+import com.togezzer.restapi.room.messaging.RoomEventProducer;
 import com.togezzer.restapi.room_users.RoomUserEntity;
 import com.togezzer.restapi.room_users.RoomUserId;
 import com.togezzer.restapi.room_users.RoomUserRepository;
@@ -27,11 +30,11 @@ public class RoomService {
     private final UserRepository userRepository;
     private final RoomUserRepository roomUserRepository;
     private final ServerRepository serverRepository;
-    private final RoomMapper roomMapper;
     private final AuthUtils authUtils;
+    private final RoomEventProducer roomEventProducer;
 
 
-    public RoomDTO create(final RoomDTO roomDTO) {
+    public void create(final RoomDTO roomDTO) {
         final var uuid = UUID.randomUUID();
 
         final var roomEntityBuilder = RoomEntity.builder()
@@ -52,7 +55,15 @@ public class RoomService {
         }
 
         final var createdRoomEntity = this.roomRepository.save(roomEntityBuilder.build());
-        return this.roomMapper.toDto(createdRoomEntity);
+        final var roomEventDTO = RoomEventDTO.builder()
+                .statusEvent(StatusEvent.CREATED)
+                .id(createdRoomEntity.getId())
+                .uuid(createdRoomEntity.getUuid())
+                .name(createdRoomEntity.getName())
+                .serverUuid(createdRoomEntity.getServer() != null ? createdRoomEntity.getServer().getUuid() : null)
+                .build();
+
+        roomEventProducer.publishToQueues(roomEventDTO);
     }
 
 
@@ -65,7 +76,17 @@ public class RoomService {
         final var roomEntity = getRoomEntityByUUID(roomId);
 
         roomEntity.setName(renameRoomDTO.name());
-        this.roomRepository.save(roomEntity);
+        final var renameRoomEntity = this.roomRepository.save(roomEntity);
+
+        final var roomEventDTO = RoomEventDTO.builder()
+                .statusEvent(StatusEvent.RENAME)
+                .id(renameRoomEntity.getId())
+                .uuid(renameRoomEntity.getUuid())
+                .name(renameRoomEntity.getName())
+                .serverUuid(renameRoomEntity.getServer() != null ? renameRoomEntity.getServer().getUuid() : null)
+                .build();
+
+        roomEventProducer.publishToQueues(roomEventDTO);
     }
 
     public void join(final JoinRoomDTO joinRoomDTO, final UUID roomUuid) {
@@ -109,4 +130,19 @@ public class RoomService {
         this.roomUserRepository.saveAll(roomUserEntities);
     }
 
+    public void delete(UUID roomUuid){
+        final var roomEntity = getRoomEntityByUUID(roomUuid);
+        roomUserRepository.deleteAllByRoom(roomEntity);
+        roomRepository.delete(roomEntity);
+
+        final var roomEventDTO = RoomEventDTO.builder()
+                .statusEvent(StatusEvent.DELETED)
+                .id(roomEntity.getId())
+                .uuid(roomEntity.getUuid())
+                .name(roomEntity.getName())
+                .serverUuid(roomEntity.getServer() != null ? roomEntity.getServer().getUuid() : null)
+                .build();
+
+        roomEventProducer.publishToQueues(roomEventDTO);
+    }
 }

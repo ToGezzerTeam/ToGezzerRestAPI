@@ -1,4 +1,4 @@
-package com.togezzer.restapi.user;
+package com.togezzer.restapi.user.dto;
 
 import lombok.Getter;
 import lombok.Setter;

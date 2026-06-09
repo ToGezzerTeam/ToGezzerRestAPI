@@ -6,12 +6,17 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.togezzer.restapi.room.dto.RenameRoomDTO;
 import com.togezzer.restapi.room.dto.RoomDTO;
+import com.togezzer.restapi.room.enums.ChannelType;
+import com.togezzer.restapi.room.messaging.RoomEventProducer;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+
+import java.time.Instant;
 import java.util.UUID;
 
 import static org.hamcrest.Matchers.containsString;
@@ -28,7 +33,13 @@ class RoomRenameControllerTest {
     private MockMvc mockMvc;
 
     @Autowired
+    private RoomRepository roomRepository;
+
+    @Autowired
     private JwtService jwtService;
+
+    @MockitoBean
+    private RoomEventProducer roomEventProducer;
 
     private final ObjectMapper objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
 
@@ -38,27 +49,17 @@ class RoomRenameControllerTest {
 
     @Test
     void should_rename_room_successfully() throws Exception {
-        // Create a room first so rename returns 200 (otherwise it returns 404)
-        final var createRequest = RoomDTO.builder()
+        // Crée la room directement en base
+        final var roomEntity = roomRepository.save(RoomEntity.builder()
+                .uuid(UUID.randomUUID())
                 .name("Old name")
                 .channelType(ChannelType.TEXT)
-                .build();
-
-        final var createResponse = mockMvc.perform(post("/api/rooms")
-                        .header("Authorization", authHeader())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(createRequest)))
-                .andExpect(status().isCreated())
-                .andReturn()
-                .getResponse()
-                .getContentAsString();
-
-        final var createdRoom = objectMapper.readValue(createResponse, RoomDTO.class);
-        assertNotNull(createdRoom.getUuid());
+                .createdAt(Instant.now())
+                .build());
 
         final var renameRequest = new RenameRoomDTO("New name");
 
-        mockMvc.perform(patch("/api/rooms/{uuid}", createdRoom.getUuid())
+        mockMvc.perform(patch("/api/rooms/{uuid}", roomEntity.getUuid())
                         .header("Authorization", authHeader())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(renameRequest)))
