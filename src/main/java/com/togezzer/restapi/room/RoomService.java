@@ -60,6 +60,7 @@ public class RoomService {
                 .id(createdRoomEntity.getId())
                 .uuid(createdRoomEntity.getUuid())
                 .name(createdRoomEntity.getName())
+                .channelType(createdRoomEntity.getChannelType())
                 .serverUuid(createdRoomEntity.getServer() != null ? createdRoomEntity.getServer().getUuid() : null)
                 .build();
 
@@ -83,6 +84,7 @@ public class RoomService {
                 .id(renameRoomEntity.getId())
                 .uuid(renameRoomEntity.getUuid())
                 .name(renameRoomEntity.getName())
+                .channelType(renameRoomEntity.getChannelType())
                 .serverUuid(renameRoomEntity.getServer() != null ? renameRoomEntity.getServer().getUuid() : null)
                 .build();
 
@@ -140,6 +142,7 @@ public class RoomService {
                 .id(roomEntity.getId())
                 .uuid(roomEntity.getUuid())
                 .name(roomEntity.getName())
+                .channelType(roomEntity.getChannelType())
                 .serverUuid(roomEntity.getServer() != null ? roomEntity.getServer().getUuid() : null)
                 .build();
 
