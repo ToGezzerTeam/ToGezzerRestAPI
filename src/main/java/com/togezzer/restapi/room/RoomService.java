@@ -18,6 +18,7 @@ import com.togezzer.restapi.server.ServerRepository;
 import com.togezzer.restapi.user.UserRepository;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.List;
@@ -132,11 +133,9 @@ public class RoomService {
         this.roomUserRepository.saveAll(roomUserEntities);
     }
 
+    @Transactional
     public void delete(UUID roomUuid){
         final var roomEntity = getRoomEntityByUUID(roomUuid);
-        roomUserRepository.deleteAllByRoom(roomEntity);
-        roomRepository.delete(roomEntity);
-
         final var roomEventDTO = RoomEventDTO.builder()
                 .statusEvent(StatusEvent.DELETED)
                 .id(roomEntity.getId())
@@ -145,6 +144,9 @@ public class RoomService {
                 .channelType(roomEntity.getChannelType())
                 .serverUuid(roomEntity.getServer() != null ? roomEntity.getServer().getUuid() : null)
                 .build();
+
+        roomUserRepository.deleteAllByRoom(roomEntity);
+        roomRepository.delete(roomEntity);
 
         roomEventProducer.publishToQueues(roomEventDTO);
     }
